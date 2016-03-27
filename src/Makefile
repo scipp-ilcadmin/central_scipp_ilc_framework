@@ -1,13 +1,15 @@
 LCSIM_JAR = $(ILC)/lcsim/distribution/target/lcsim-distribution-3.1.1-SNAPSHOT-bin.jar
 SCIPPCODE = $(ILC)/scipp_ilc_framework
-SOURCE    = $(SCIPPCODE)/src
-TARGET    = $(SCIPPCODE)/target
-PACKAGE   = scipp_ilc
+SOURCE = $(SCIPPCODE)/src
+TARGET = $(SCIPPCODE)/target
+PACKAGE = scipp_ilc
 
-GEOMETRY  = $(SOURCE)/base/beamcal/geometry/*java
-UTIL      = $(SOURCE)/base/util/*java
-DRIVERS   = $(SOURCE)/drivers/*java
-SOURCE_FILES = $(GEOMETRY) $(UTIL) $(DRIVERS)
+GEOMETRY = $(wildcard $(SOURCE)/base/beamcal/geometry/*java)
+UTIL = $(wildcard $(SOURCE)/base/util/*java)
+DRIVERS = $(wildcard $(SOURCE)/drivers/*java)
+CORE_DRIVERS = $(wildcard $(SOURCE)/core_drivers/*java)
+
+SOURCE_FILES = $(GEOMETRY) $(UTIL) $(DRIVERS) $(CORE_DRIVERS)
 
 OUTPUT_JAR = $(PACKAGE)-3.0.jar
 
