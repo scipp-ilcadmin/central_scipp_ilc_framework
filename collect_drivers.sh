@@ -1,5 +1,5 @@
 frameworkdir=$HOME/ilc_primary/central_scipp_ilc_framework
-userfile=$HOME/admin_scripts/scipp_ilc_users_lists.txt
+userfile=$HOME/admin_scripts/scipp_ilc_users_list.txt
 
 cd $frameworkdir/src/driver_collective
 for user in $(cat $userfile); do
@@ -8,5 +8,5 @@ for user in $(cat $userfile); do
     git add $user/*java
 done;
 
-cd $frameworkdir
+cd $frameworkdir;
 git commit -am "autocommit on $(date)";
