@@ -7,4 +7,6 @@ for user in $(cat $userfile); do
     cp /local-data/$user/scipp_ilc_framework/src/driver/*java $user
     git add $user/*java
 done;
+
 cd $frameworkdir
+git commit -am "autocommit on $(date)";
