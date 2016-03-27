@@ -10,3 +10,4 @@ done;
 
 cd $frameworkdir;
 git commit -am "autocommit on $(date)";
+git push origin master
