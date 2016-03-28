@@ -1,3 +1,4 @@
+#!/bin/bash
 frameworkdir=$HOME/ilc_primary/central_scipp_ilc_framework
 userfile=$HOME/admin_scripts/scipp_ilc_users_list.txt
 
