@@ -1,16 +1,17 @@
 /*
  * BeamParameterDetermination.java
  *
- * Using a given number of crossings
- * to average over, makes heatmaps of radiation dosage
- * from Edeposition, computed over a whole year.   
+ * This driver looks to measure observables
+ * using the BeamCalorimeter, and will use
+ * these to reconstruct beam parameters.
+ * !!! Observables to be measured: L-R , T-D,
+ * & diagonal asymmetries, Thrust axis, total
+ * deposition, ...
+ *
  *
  * Previous function/ Basis:
- * Determines max energy deposited on a 1mm x 1mm pixel
- * then makes heat maps and frequency distributions of
- * energy deposited on first 15 Layers.
+ * BeamcalEnergyDep
  *
- * 
  * Last edited on Mar 08, 2016, 9:21 AM
  * @Author: Luc d'Hauthuille 
  * ~ Based on EventAnalysis written by Christopher Milke et al. ~
@@ -128,15 +129,13 @@ public class BeamParameterDetermination extends Driver {
 	return radDosage;
     }
     // Computes leakage current at 600V as a function of Temperature
-    // in Celsius based on data obtained by Wyatt for a 0.025cm^2 sensor
-    // circa 12/16 
+    // in Celsius based on Wyatt's data(PF sensor, 300 MRads) 
     public double getCurrent(double T){
 	double I = 5.79338*Math.pow(10,-6) + (7.39127*Math.pow(10,-7))*T + 
 	    4.15927*Math.pow(10,-8)*Math.pow(T,2) + 8.9582*Math.pow(10,-10)*Math.pow(T,3);
 	return I;
     }
-    // Computes power drawn, in [W], per cm^2 from data
-    // for A_sensor = 0.025cm^2 
+    // Computes power drawn, in [W], per cm^2 from data based on A_sensor = 0.025cm^2 
     public double getRawPower(double T){
 	double I = getCurrent(T);
 	double biasVoltage = 600;
@@ -155,7 +154,11 @@ public class BeamParameterDetermination extends Driver {
 	double pwrDraw = pwrPerSquarecm* pixelArea;//Obtain pwr draw for this pixel
 	return pwrDraw; // in Watts, [01/29/16]
     }
-
+    public double maxPixelE(double currMax,double energy){
+	double newMax = currMax;
+	if(energy> currMax) newMax = energy;
+	return newMax;
+    }
     //PROCESS FUNCTION
     //This is where the vast bulk of the program is run and controlled
     public void process( EventHeader event ) {
@@ -169,7 +172,6 @@ public class BeamParameterDetermination extends Driver {
 	double sumOfPowerDrawn = 0;
         double maxPixelEnergy = 0;
 	int layerOfMaxE = 0;
-	double[] power = new double[16];
 	double[] eDep = new double[25];
 	try {
             for (SimCalorimeterHit hit : hits) {
@@ -179,6 +181,7 @@ public class BeamParameterDetermination extends Driver {
                 else {
 		    double energy = hit.getRawEnergy();		   
 		    sumOfEnergy += energy;
+		    //REPLACE with maxPixelE
 		    if(maxPixelEnergy < energy){
 			maxPixelEnergy = energy;
 			layerOfMaxE = layer;
@@ -187,13 +190,9 @@ public class BeamParameterDetermination extends Driver {
 		    if( layer< 25) eDep[layer] += energy; 
 		    //All Layers. Set wholeBcal to true at bottom
 		    if(wholeBcal == true){   
-			powerDrawn = powerDraw(radDosage(energy/numberOfEvents),runTemp);
-			root.fill("heatmap",vec[0],vec[1],powerDraw(radDosage(energy/numberOfEvents),runTemp));
-			//root.fill("heatmap",vec[0],vec[1],energy); //Used for P129 project
-			//Select Layers
+		     //Select Layers
 		    }if(layersBcal && layer <= 15){
 			power[layer] += powerDraw(radDosage(energy/numberOfEvents),runTemp);//Divide by Event# for avg/event.
-			// Multiply powerDraw by 100 was removed from the fill function
 			root.fill("heatmap"+layer,vec[0],vec[1],powerDraw(radDosage(energy/numberOfEvents),runTemp));//mW
 			root.fill("histE"+layer,powerDraw(radDosage(energy/numberOfEvents),runTemp)); //in mW(each pixel)
 			/*Plot radDosage
@@ -212,30 +211,12 @@ public class BeamParameterDetermination extends Driver {
             System.out.println(e);
             System.exit(1);
         }
-	//Redundant likely
-	try{
-	for(int l = 0; l< 25; l++){
-	    root.fill("histE_whole",l,eDep[l]);
-	}
-	}catch(java.io.IOException e) {
-            System.out.println(e);
-            System.exit(1);
-        }
 	// Post-processing print statements:
         System.out.println("finished event "+ ++eventNumber);        
-	System.out.println("Energy deposited over layers:" + Arrays.toString(eDep));
 	System.out.println("Total energy deposited across BeamCal: " + sumOfEnergy);
-	System.out.println("Total power drawn across BeamCal: " + sumOfPowerDrawn);
-	System.out.println("Highest power drawn on a pixel was " + 
-			   powerDraw(radDosage(maxPixelEnergy/numberOfEvents),runTemp) 
-			   + "on layer " + layerOfMaxE);
 	energyDepOverEvents += sumOfEnergy;
 	System.out.println("Highest energy deposited on a pixel was " + maxPixelEnergy 
 			   + "on layer " + layerOfMaxE);
-	System.out.println("Radiation dosage for 3 years on this pixel is thus "
-			   + radDosage(maxPixelEnergy));
-	
-	System.out.println("Power Drawn over this event, per layer :" + Arrays.toString(power));
     }//End Process
 
 
