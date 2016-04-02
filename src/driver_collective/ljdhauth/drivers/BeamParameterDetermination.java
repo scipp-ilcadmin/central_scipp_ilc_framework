@@ -2,18 +2,22 @@
  * BeamParameterDetermination.java
  *
  * This driver looks to measure observables
- * using the BeamCalorimeter, and will use
- * these to reconstruct beam parameters.
- * !!! Observables to be measured: L-R , T-D,
+ * in the BeamCalorimeter, and will later
+ * reconstruct beam parameters from these.
+ * 
+ * OBSERVABLES to be measured: L-R , T-D,
  * & diagonal asymmetries, Thrust axis, total
  * deposition, ...
  *
+ * Works in progress: LR & TD assymetry
+ * The next thing to start: thrust axis?
  *
- * Previous function/ Basis:
- * BeamcalEnergyDep
+ * Basis driver:
+ * --> BeamcalEnergyDep.java
  *
- * Last edited on Mar 08, 2016, 9:21 AM
+ * Last edited on Mar 31, 2016, 3:54 PM
  * @Author: Luc d'Hauthuille 
+ *
  * ~ Based on EventAnalysis written by Christopher Milke et al. ~
  */
 
@@ -63,7 +67,7 @@ public class BeamParameterDetermination extends Driver {
     }
     //END DEFINE XML FUNCTIONS
     
-    //This function is called when program is first started,
+    //This function is called when program is started,
     //initializes all persistent data
     public void startOfData() {
         eventNumber = 0;
@@ -116,6 +120,10 @@ public class BeamParameterDetermination extends Driver {
         }
     }
 
+
+
+    //******************************Power Analysis******************************************//
+
     // Computes the radiation dosage of a pixel over x years based on the energyPerCrossing.
     public double radDosage(double energyPerCrossing){
 	int x_years = 3; //number of years
@@ -123,11 +131,12 @@ public class BeamParameterDetermination extends Driver {
 	double EDepYear = energyPerCrossing*n_y*x_years;
 	double pixelArea = Math.pow(10,-2); //Pixel Area in cm^2
 	double Eparticle = 120*Math.pow(10,-6); // Eparticle(120 keV -> 0.000120 GeV) 
-	double numberPrtcles = (EDepYear/pixelArea)/(Eparticle); //Number of particles through this area
+	double numberPrtcles = (EDepYear/pixelArea)/(Eparticle); //Flux (# of prtcles through pixelArea)
 	double RAD = 4*Math.pow(10,7); //# particles through a cm^2 = 1 Rad
 	double radDosage = numberPrtcles/(RAD);
 	return radDosage;
     }
+
     // Computes leakage current at 600V as a function of Temperature
     // in Celsius based on Wyatt's data(PF sensor, 300 MRads) 
     public double getCurrent(double T){
@@ -154,47 +163,102 @@ public class BeamParameterDetermination extends Driver {
 	double pwrDraw = pwrPerSquarecm* pixelArea;//Obtain pwr draw for this pixel
 	return pwrDraw; // in Watts, [01/29/16]
     }
+
+    //*************************************************************************************//
+
+
+    //In testing
     public double maxPixelE(double currMax,double energy){
 	double newMax = currMax;
 	if(energy> currMax) newMax = energy;
 	return newMax;
     }
+    //Computes the LR assymetries based on hit coordinates
+    //*Need to be weighted by energy
+    public void assym_LR(double[] pos, double hitEnergy){
+	//System.out.println(sum_LR);
+	sum_LR += pos[0]*hitEnergy;//weight hit position by energy 
+	return;
+    }
+    public void assym_LR_postTransform(double[] pos, double hitEnergy){
+        //System.out.println(sum_LR_post);
+        sum_LR_post += pos[0]*hitEnergy; //weight hit position by energy
+        return;
+    }
+    public void assym_TD(double[] pos, double hitEnergy){
+        //System.out.println(sum_TD);                                                                                                   
+        sum_TD += pos[1]*hitEnergy;//weight hit position by energy
+        return;
+    }
+    public void assym_TD_postTransform(double[] pos, double hitEnergy){
+        //System.out.println(sum_LR_post);
+        sum_TD_post += pos[1]*hitEnergy; //weight hit position by energy
+        return;
+    }
+
+    //Observables//
+    public double sum_LR = 0;
+    public double sum_LR_post = 0;
+    public double sum_TD = 0;
+    public double sum_TD_post = 0;
+
     //PROCESS FUNCTION
     //This is where the vast bulk of the program is run and controlled
     public void process( EventHeader event ) {
-        super.process( event );
+	//set assymetries to 0 again
+	sum_LR = 0;
+	sum_LR_post = 0;
+        sum_TD = 0;
+	sum_TD_post = 0;
+
+	super.process( event );
         List<SimCalorimeterHit> hits = event.get(SimCalorimeterHit.class, "BeamCalHits");
+	//initialize event variables
 	int check_layer = 0;int hit_count_limit = 100; boolean use_limit = false;
-        boolean reject_negative = true;
+        boolean reject_negative = false; // reject negative beamcal?
         int hit_count = 0;
+      
 	double powerDrawn = 0;
 	double sumOfEnergy = 0;
 	double sumOfPowerDrawn = 0;
         double maxPixelEnergy = 0;
 	int layerOfMaxE = 0;
 	double[] eDep = new double[25];
+
 	try {
+	    // loop through the List of <SimCalHits..>
             for (SimCalorimeterHit hit : hits) {
                 double[] vec = hit.getPosition();
 		int layer = hit.getLayerNumber();
 		if ( reject_negative && (vec[2]<0) ){ layersHit2.add(layer);} //pass over event
                 else {
-		    double energy = hit.getRawEnergy();		   
+	            double energy = hit.getRawEnergy();
+		    assym_LR(vec, energy);
+		    assym_TD(vec, energy);
+		    double[] transformed_Vec = PolarCoords.ZtoBeamOut(vec[0],vec[1],vec[2]);
+		    assym_LR_postTransform(transformed_Vec,energy);
+		    assym_TD_postTransform(transformed_Vec,energy);
+
+		    //********Power lies beneath
+		    /*
 		    sumOfEnergy += energy;
-		    //REPLACE with maxPixelE
+		    //REPLACE with maxPixelE(03/31/16)
 		    if(maxPixelEnergy < energy){
 			maxPixelEnergy = energy;
 			layerOfMaxE = layer;
 		    }
+		    */
 		    //layersHit.add(layer);
-		    if( layer< 25) eDep[layer] += energy; 
+		    //if( layer< 25) eDep[layer] += energy; 
+		    
 		    //All Layers. Set wholeBcal to true at bottom
-		    if(wholeBcal == true){   
-		     //Select Layers
-		    }if(layersBcal && layer <= 15){
-			power[layer] += powerDraw(radDosage(energy/numberOfEvents),runTemp);//Divide by Event# for avg/event.
+		    if(wholeBcal == true){/*Select Layers*/}
+		    if(layersBcal && layer <= 15){
+			//power[layer] += powerDraw(radDosage(energy/numberOfEvents),runTemp);//Divide by Event# for avg/event.
 			root.fill("heatmap"+layer,vec[0],vec[1],powerDraw(radDosage(energy/numberOfEvents),runTemp));//mW
 			root.fill("histE"+layer,powerDraw(radDosage(energy/numberOfEvents),runTemp)); //in mW(each pixel)
+			//c. 03/31/16
+			/**/
 			/*Plot radDosage
 			  root.fill("heatmap"+layer,vec[0],vec[1],radDosage(energy/numberOfEvents));//mW/cm^2
 			  root.fill("histE"+layer,radDosage(energy/numberOfEvents)); //in mW(each pixel's)*/
@@ -202,12 +266,14 @@ public class BeamParameterDetermination extends Driver {
 			   root.fill("heatmap"+layer,vec[0],vec[1],energy*125*Math.pow(10,9)*3);
 			   root.fill("histE"+layer,energy*125*Math.pow(10,9)*3); */
 		    }
-		    //sumOfEnergy += energy;
 		    sumOfPowerDrawn += powerDrawn; 
+		    //********************
+		    sumOfEnergy += energy;
+
 		}
                 if ( use_limit && (hit_count++ > hit_count_limit) ) break;    
             }
-        } catch(java.io.IOException e) {
+	} catch(java.io.IOException e) {
             System.out.println(e);
             System.exit(1);
         }
@@ -217,8 +283,15 @@ public class BeamParameterDetermination extends Driver {
 	energyDepOverEvents += sumOfEnergy;
 	System.out.println("Highest energy deposited on a pixel was " + maxPixelEnergy 
 			   + "on layer " + layerOfMaxE);
-    }//End Process
-
+	System.out.println("L_R assym number for this event, weighted by E:" + (sum_LR/sumOfEnergy));
+	System.out.println("L_R assym number for this event, weighted by E, w/ transform :" +
+			   (sum_LR_post/sumOfEnergy));
+	System.out.println("T_D assym number for this event, weighted by E:" + (sum_TD/sumOfEnergy));
+	System.out.println("T_D assym number for this event, weighted by E:" + 
+			   (sum_TD_post/sumOfEnergy));
+	System.out.println("************************");
+	}//End Process
+	
 
     /*here all the classwide variables are declared*/
     private int numberOfEvents = 10; //This is used to get averages per event.

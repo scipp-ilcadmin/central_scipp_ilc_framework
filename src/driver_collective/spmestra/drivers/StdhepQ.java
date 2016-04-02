@@ -77,13 +77,13 @@ public class StdhepQ extends Driver {
          root = new Jroot(jrootFile,root_mode);
 
          // Resultant Momentum (Pr) vs. Momentum Transfer ( sqrt(Q^2) )
-         root.init("TH2D","prVQsquare","prVQsquare","P#_r (y) vs. #sqrt{Q#^2} (x)", 350, 0, 3, 350, 0, 1.8 );
+         root.init("TH2D","prVQsquare","prVQsquare","P#{_r} (y) vs. #sqrt{Q#{^2} } (x)", 200, 0, 3, 200, 0, 1.8 );
          // Ocurrences of #P_r
-         root.init("TH1D","timesVpr","timesVpr","Occurences of #P_r of Resultant Particles", 350, 0, 1.8 );
+         root.init("TH1D","timesVpr","timesVpr","Occurences of #P_r of Resultant Particles", 200, 0, 1.8 );
 
          //file process loop
          int total = 0;
-         int limit = 300000;
+         int limit = 500000;
          for(String filename: stdhepfilelist) {
             if (total %1000==0) System.out.println(total);
             StdhepReader reader = new StdhepReader(filename);
@@ -118,34 +118,38 @@ public class StdhepQ extends Driver {
             int ID = event.getIDHEP( p );                           
             //System.out.println( p+" is a "+ID ); 
             boolean fin_st = ( event.getISTHEP( p ) == FINAL_STATE);
-            boolean primary = ( event.getVHEP(p, 3)== 0 );
             // Momentum and energy values
             double x = event.getPHEP(p, 0); 
             double y = event.getPHEP(p, 1); 
             double z = event.getPHEP(p, 2);
             double En = event.getPHEP(p, 3);
-            //System.out.println("(x ,y ,z, E) = ("+x+", "+y+", "+z+", "+En+")");
+            //boolean primary = ( event.getJMOHEP(p, 0)==0 );
+            boolean primary = ( (ID==11 || ID==-11)
+                                 && event.getJMOHEP(p, 1)==0 );
+            //System.out.println(ID);
+            //System.out.println( "   Parnet: "+event.getJMOHEP(p, 0) );
+            //System.out.println( "   Parnet: "+event.getJMOHEP(p, 1) ); 
+            //System.out.println("   (x ,y ,z, E) = ("+x+", "+y+", "+z+", "+En+")");
             boolean neutrino = (ID==12 || ID==14 || ID==16 || ID==18 );
             if( fin_st && !neutrino ){
                // Want max of Positron and Electron Q
                if( primary ){
+                 //System.out.println( event.toString() );
                  //System.out.println("(x ,y ,z, E) = ("+x+", "+y+", "+z+", "+En+")");
+                 //System.out.println( "Parnet: "+event.getJMOHEP(p, 0) );
+                 //System.out.println( "Parnet: "+event.getJMOHEP(p, 1) ); 
                   double R = getQ(x, y, z, En);
                   if ( R>Q ) Q = R;
-                  
                }
                // Vector summmation of all resultant particle perp momentum
                else {
                   x_tot+=x; y_tot+=y;
                }
-               //double birth = event.getVHEP(p, 4);
-               //if ( ID==11||ID==-11 ){
-               //   double birth = event.getVHEP(p, 3);
-               //   System.out.println("Particle #"+p+" a "+ID+" born at "+birth);
-               //}
             }
          }
          double mag_pr = Math.sqrt( x_tot*x_tot + y_tot*y_tot );
+         //System.out.println("Q: "+Q );
+         //System.out.println("P_t: "+mag_pr+"\n");
          root.fill("timesVpr", mag_pr );
          root.fill("prVQsquare", Q, mag_pr);
       } catch(java.io.IOException e) {
@@ -154,12 +158,18 @@ public class StdhepQ extends Driver {
       }
    }
 
+   public static double getEn(double P, double m){
+      double c = 298000000;
+      return Math.sqrt( P*P*c*c + m*m*Math.pow(c, 4) );
+   }
+
    // Calculaes quantity Q, momentum transfer. I dont know what that means
    public static double getQ( double x, double y, double z, double En ){
       double r = Math.sqrt( x*x + y*y + z*z );
       double P = r;
-      double Q = 2*En*P*(1 - ( Math.abs(z)/r ) );
-      return Math.sqrt( Q );
+      double Q2 = 2*En*P*(1 - ( Math.abs(z)/r ) );
+      //System.out.println("Q in function: "+Q2 );
+      return Math.sqrt( Q2 );
    }
 
    // Generator Statuses
