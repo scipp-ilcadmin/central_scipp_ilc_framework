@@ -83,7 +83,7 @@ public class StdhepQ extends Driver {
 
          //file process loop
          int total = 0;
-         int limit = 500000;
+         int limit = 80;
          for(String filename: stdhepfilelist) {
             if (total %1000==0) System.out.println(total);
             StdhepReader reader = new StdhepReader(filename);
@@ -114,6 +114,7 @@ public class StdhepQ extends Driver {
       // Array to hold perpindicular momenta
       double x_tot = 0; double y_tot = 0;
       try{
+         System.out.println("\n=======================================\n");
          for ( int p = 0; p<n; p++) {
             int ID = event.getIDHEP( p );                           
             //System.out.println( p+" is a "+ID ); 
@@ -122,14 +123,29 @@ public class StdhepQ extends Driver {
             double x = event.getPHEP(p, 0); 
             double y = event.getPHEP(p, 1); 
             double z = event.getPHEP(p, 2);
+            double u = event.getVHEP(p, 0);
+            double v = event.getVHEP(p, 1);
+            double w = event.getVHEP(p, 2);
             double En = event.getPHEP(p, 3);
             //boolean primary = ( event.getJMOHEP(p, 0)==0 );
             boolean primary = ( (ID==11 || ID==-11)
                                  && event.getJMOHEP(p, 1)==0 );
-            //System.out.println(ID);
-            //System.out.println( "   Parnet: "+event.getJMOHEP(p, 0) );
-            //System.out.println( "   Parnet: "+event.getJMOHEP(p, 1) ); 
-            //System.out.println("   (x ,y ,z, E) = ("+x+", "+y+", "+z+", "+En+")");
+            // For comparison to LCIO values
+            if ( ID==11 || ID==-11 ){
+               double mag = Math.sqrt( x*x + y*y + z*z );
+               int par0 = event.getJMOHEP(p, 0);
+               int par1 = event.getJMOHEP(p, 1);
+               System.out.println ( "Parents: "+par0+", "+par1 );
+               System.out.println ( "Self: "+p);
+               System.out.println("ID: "+ID);
+               System.out.println("State: "+event.getISTHEP(p) );
+               System.out.printf("P: (%.3f, %.3f, %.3f) \n", x, y, z);
+               System.out.println("Pmag: "+mag);
+               System.out.printf("r: (%.3f, %.3f, %.3f) \n", u, v, w);
+               System.out.println("E: "+En+"\n");
+            }
+            // End comparisons
+
             boolean neutrino = (ID==12 || ID==14 || ID==16 || ID==18 );
             if( fin_st && !neutrino ){
                // Want max of Positron and Electron Q

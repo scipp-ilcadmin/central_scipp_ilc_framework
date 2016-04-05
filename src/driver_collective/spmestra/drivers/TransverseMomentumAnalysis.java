@@ -114,6 +114,18 @@ public class TransverseMomentumAnalysis extends Driver {
          //System.out.println(
          for (MCParticle p : event.getMCParticles() ) {
             int ID = p.getPDGID();
+
+            // block of stuff for comparing to stdhep analysis
+            double x, y, z, mag, En;
+            x = p.getPX(); y = p.getPY(); z = p.getPZ();
+            mag = p.getMomentum().magnitude();
+            En = p.getEnergy();
+            System.out.println("ID: "+ID);
+            System.out.printf("(%.3f, %.3f, %.3f) \n", x, y, z);
+            System.out.println("Pmag: "+mag);
+            System.out.println("E: "+En);
+            // End of stuff
+
             boolean fin_st =(p.getGeneratorStatus()==MCParticle.FINAL_STATE);
             boolean primary = ( p.getParents().size()==0 ||
                                 p.getParents().size()==2 );

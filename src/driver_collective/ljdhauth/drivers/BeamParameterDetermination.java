@@ -37,7 +37,8 @@ import org.lcsim.util.Driver.NextEventException;
 import hep.physics.jet.EventShape;
 import hep.physics.particle.Particle;
 import hep.physics.vec.Hep3Vector;
-
+import hep.physics.vec.BasicHep3Vector;
+import hep.physics.vec.VecOp;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -195,8 +196,59 @@ public class BeamParameterDetermination extends Driver {
         sum_TD_post += pos[1]*hitEnergy; //weight hit position by energy
         return;
     }
+    //Compute mean shower depth
+    public void compute_meanDepth(List<SimCalorimeterHit> hits){
+	double energyDepth_productSum = 0; // sum of the products of energy*depth
+	double energyDepthL_productSum = 0; // sum of the products of energy*depth
+	double sumOfEnergy = 0;
+	for(SimCalorimeterHit hit: hits){	    
+	    double[] vec = hit.getPosition();
+	    if(vec[2] < 0){ /*pass negative beamcal*/}
+	    else{
+	    double[] transformed_Vec = PolarCoords.ZtoBeamOut(vec[0],vec[1],vec[2]);
+	    double energy = hit.getRawEnergy();
+	    sumOfEnergy += energy;
+	    energyDepth_productSum += energy*transformed_Vec[2];
+	    energyDepthL_productSum += energy*hit.getLayerNumber();
+	    }
+	}
+	meanDepth_Z = energyDepth_productSum/sumOfEnergy;
+	meanDepth_Layer = energyDepthL_productSum/sumOfEnergy;
+	System.out.println("Mean depth is " + meanDepth_Z);
+	System.out.println("Mean Layer is " + meanDepth_Layer);
+	
+    }
+    //Compute thrust axis and value
+    public void compute_Thrust(List<SimCalorimeterHit> hits, EventHeader event){
+	   EventShape es = new EventShape();
+	   /*
+	     List<BasicHep3Vector> vecs = new ArrayList<BasicHep3Vector>();
+	     for(SimCalorimeterHit hit: hits){
+	     BasicHep3Vector a = new BasicHep3Vector(hit.getPosition());
+	     vecs.add(a);
+	     }
+	     es.setEvent(vecs);
+	   */
+	   List<MCParticle> final_Particles = new ArrayList<MCParticle>();
+	   int counter = 0;
+	   for(MCParticle p: event.getMCParticles()){
+	       if(p.getGeneratorStatus() == MCParticle.FINAL_STATE){
+		   final_Particles.add(p);
+	       }
+	       if(counter > 990) break;
+	       counter++;
+	   }
+	   List<Hep3Vector> momentaList = new ArrayList<Hep3Vector>();
+	   for(MCParticle p: final_Particles){ momentaList.add(p.getMomentum());}
+	   es.setEvent(momentaList);
+	   Hep3Vector thrust = es.thrustAxis();
+	   System.out.println("The thrust is " + thrust.magnitude());
+    }
+    
 
     //Observables//
+    public double meanDepth_Z = 0;
+    public double meanDepth_Layer = 0;
     public double sum_LR = 0;
     public double sum_LR_post = 0;
     public double sum_TD = 0;
@@ -226,33 +278,34 @@ public class BeamParameterDetermination extends Driver {
 	double[] eDep = new double[25];
 
 	try {
+	    
+	    compute_meanDepth(hits);
+	    compute_Thrust(hits, event);
 	    // loop through the List of <SimCalHits..>
             for (SimCalorimeterHit hit : hits) {
                 double[] vec = hit.getPosition();
 		int layer = hit.getLayerNumber();
 		if ( reject_negative && (vec[2]<0) ){ layersHit2.add(layer);} //pass over event
                 else {
+		    
 	            double energy = hit.getRawEnergy();
 		    assym_LR(vec, energy);
 		    assym_TD(vec, energy);
 		    double[] transformed_Vec = PolarCoords.ZtoBeamOut(vec[0],vec[1],vec[2]);
 		    assym_LR_postTransform(transformed_Vec,energy);
 		    assym_TD_postTransform(transformed_Vec,energy);
-
+		    
 		    //********Power lies beneath
 		    /*
 		    sumOfEnergy += energy;
 		    //REPLACE with maxPixelE(03/31/16)
-		    if(maxPixelEnergy < energy){
-			maxPixelEnergy = energy;
-			layerOfMaxE = layer;
-		    }
+		    if(maxPixelEnergy < energy){maxPixelEnergy = energy; layerOfMaxE = layer; }
 		    */
 		    //layersHit.add(layer);
 		    //if( layer< 25) eDep[layer] += energy; 
 		    
 		    //All Layers. Set wholeBcal to true at bottom
-		    if(wholeBcal == true){/*Select Layers*/}
+		    //if(wholeBcal == true){/*Select Layers*/}
 		    if(layersBcal && layer <= 15){
 			//power[layer] += powerDraw(radDosage(energy/numberOfEvents),runTemp);//Divide by Event# for avg/event.
 			root.fill("heatmap"+layer,vec[0],vec[1],powerDraw(radDosage(energy/numberOfEvents),runTemp));//mW
@@ -269,7 +322,6 @@ public class BeamParameterDetermination extends Driver {
 		    sumOfPowerDrawn += powerDrawn; 
 		    //********************
 		    sumOfEnergy += energy;
-
 		}
                 if ( use_limit && (hit_count++ > hit_count_limit) ) break;    
             }

@@ -52,11 +52,15 @@ public class Bhabha extends Driver {
             root = new Jroot(jrootFile, "NEW");
             //root.init("TH1D","posz","posz", "Z Position", 18000, 0, 18000);
 
-	   root.init("TH2D", "T_hit", "Thit", "Theta of E v P, Both Hit", 10000, 0, .02, 10000, 0, 0.02);
-	   root.init("TH2D", "T_miss", "Tmiss", "Theta of E v P, Both Miss", 10000, 0, .02, 10000, 0, 0.02);
-	   root.init("TH2D", "T_hitmiss", "Thitmiss", "Theta of E v P, Hit/Miss", 10000, 0, .02, 10000, 0, 0.02);
+	   root.init("TH2D", "T_hit", "Thit", "Transform: Theta of E v P, Both Hit", 10000, 0, .02, 10000, 0, 0.02);
+	   root.init("TH2D", "T_miss", "Tmiss", "Transform: Theta of E v P, Both Miss", 10000, 0, .02, 10000, 0, 0.02);
+	   root.init("TH2D", "T_hitmiss", "Thitmiss", "Transform: Theta of E v P, Hit/Miss", 10000, 0, .02, 10000, 0, 0.02);
 
-	   root.init("TH2D", "pos_emiss", "pos_emiss", "Scaled Position, HitMiss", 1000, -150, 150, 1000, -150, 150);
+	   root.init("TH2D", "Tm_hit", "Tmhit", "Rotate: Theta of E v P, Both Hit", 10000, 0, .02, 10000, 0, 0.02);
+	   root.init("TH2D", "Tm_miss", "Tmmiss", "Rotate: Theta of E v P, Both Miss", 10000, 0, .02, 10000, 0, 0.02);
+	   root.init("TH2D", "Tm_hitmiss", "Tmhitmiss", "Rotate: Theta of E v P, Hit/Miss", 10000, 0, .02, 10000, 0, 0.02);
+	   
+       root.init("TH2D", "pos_emiss", "pos_emiss", "Scaled Position, HitMiss", 1000, -150, 150, 1000, -150, 150);
 	   root.init("TH2D", "pos_pmiss", "pos_pmiss", "Scaled Position, HitMiss", 1000, -150, 150, 1000, -150, 150);
 	
 	   root.init("TH2D", "HitXY_e", "HitXY_e", "Scaled Position, Hit", 1000, -150, 150, 1000, -150, 150);
@@ -84,7 +88,26 @@ public class Bhabha extends Driver {
            System.exit(1);
         }
     }
-
+    
+    private double[] transformLorentz(double[] p, double E){
+        double theta = 0.007;
+        double in_E = 250.0;
+        double beta = Math.sin(theta);
+        double gamma = Math.pow((1-Math.pow(beta, 2)), -0.5);
+        double[] outVec = new double[4];
+    
+/*
+ * |gamma         -gamma*beta| |p|                       |p'|
+ * |-gamma*beta         gamma|*|E| = transformed 4vector |E'|
+ *
+*/
+        outVec[0] = p[0]*gamma - gamma*beta*E;
+        outVec[1] = p[1];
+        outVec[2] = p[2];
+        outVec[3] = E*gamma - gamma*beta*p[0];
+        return outVec;       
+    
+    }    
     //rotate: takes in momentum vector and rotates in xz plane by the crossing angle
     //returns rotated momentum vector
     private double[] rotate (double[] mom, double t){
@@ -125,7 +148,8 @@ public class Bhabha extends Driver {
 
 	int id, stat;
 	double theta_e, theta_p, rad_e, rad_p;
-	theta_e=theta_p=rad_e=rad_p = 0;
+	double theta_e_mom, theta_p_mom, rad_e_mom, rad_p_mom;
+	theta_e=theta_p=rad_e=rad_p = theta_e_mom = theta_p_mom = rad_e_mom = rad_p_mom = 0;
 	MCParticle fs_e = null;
 	MCParticle fs_p = null;
 	e_scx=e_scy=p_scx=p_scy=e_e=p_p=0;
@@ -170,14 +194,23 @@ public class Bhabha extends Driver {
 			}
 			e_scx = faceZ*pos_e[0]/pos_e[2];
 			e_scy = faceZ*pos_e[1]/pos_e[2];
-			//get momentum vector
-			mom_e = rotate(p.getMomentum().v(), -x_ang);
-			//determine radius
-			double angles[] = PolarCoords.CtoP(mom_e[0], mom_e[1]);
+			
+            //transform momentum 4vector
+            double [] lorT_e = transformLorentz(p.getMomentum().v(), p.getEnergy());
+            //determine radius
+			double angles[] = PolarCoords.CtoP(lorT_e[0], lorT_e[1]);
 			//double angles[] = PolarCoords.CtoP(pos_e[0], pos_e[1]);
 			rad_e = angles[0];
-			theta_e = Math.atan(rad_e/Math.abs(mom_e[2]));
+			theta_e = Math.atan(rad_e/Math.abs(lorT_e[2]));
 			//theta_e = Math.atan(rad_e/Math.abs(pos_e[2]));
+
+            //getMom
+            mom_e = rotate(p.getMomentum().v(), -0.007);
+            //determine radius
+			double angles_mom[] = PolarCoords.CtoP(mom_e[0], mom_e[1]);
+			//double angles[] = PolarCoords.CtoP(pos_e[0], pos_e[1]);
+			rad_e_mom = angles_mom[0];
+			theta_e_mom = Math.atan(rad_e_mom/Math.abs(mom_e[2]));
 		}
 		else if (id==-11){
 			fs_p = p;
@@ -195,14 +228,23 @@ public class Bhabha extends Driver {
 			}
 			p_scx = -faceZ*pos_p[0]/pos_p[2];
 			p_scy = -faceZ*pos_p[1]/pos_p[2];
-			//get momentum vector
-			mom_p = rotate(p.getMomentum().v(), x_ang);
+            
+            //transform momentum 4vector
+            double [] lorT_p = transformLorentz(p.getMomentum().v(), p.getEnergy());
 			//determine radius
-			double angles[] = PolarCoords.CtoP(mom_p[0], mom_p[1]);
+			double angles[] = PolarCoords.CtoP(lorT_p[0], lorT_p[1]);
 			//double angles[] = PolarCoords.CtoP(pos_p[0], pos_p[1]);
 			rad_p = angles[0];
-			theta_p = Math.atan(rad_p/Math.abs(mom_p[2]));
+			theta_p = Math.atan(rad_p/Math.abs(lorT_p[2]));
 			//theta_p = Math.atan(rad_p/Math.abs(pos_p[2]));
+            
+            //getMom
+            mom_p = rotate(p.getMomentum().v(), 0.007);
+            //determine radius
+			double angles_mom[] = PolarCoords.CtoP(mom_p[0], mom_p[1]);
+			//double angles[] = PolarCoords.CtoP(pos_e[0], pos_e[1]);
+			rad_p_mom = angles_mom[0];
+			theta_p_mom = Math.atan(rad_p_mom/Math.abs(mom_p[2]));
 		}	
 	    }
 	}
@@ -212,6 +254,8 @@ public class Bhabha extends Driver {
             case 0:  
 			try{
 				root.fill("Tmiss", theta_e, theta_p);
+                root.fill("Tmmiss", theta_e_mom, theta_p_mom);
+
 				root.fill("MissXY_e", e_scx, e_scy);
 				root.fill("MissXY_p", p_scx, p_scy);
 			}
@@ -251,6 +295,7 @@ public class Bhabha extends Driver {
 			}
 
 			root.fill("Thitmiss", theta_e, theta_p);
+            root.fill("Tmhitmiss", theta_e_mom, theta_p_mom);
 		}
 		catch(java.io.IOException e){
 			System.out.println(e);
@@ -261,6 +306,7 @@ public class Bhabha extends Driver {
             case 2:  
 		try{
 			root.fill("Thit", theta_e, theta_p);
+            root.fill("Tmhit", theta_e_mom, theta_p_mom);
 			root.fill("HitXY_e", e_scx, e_scy);
 			root.fill("HitXY_p", p_scx, p_scy);
 		}
@@ -275,6 +321,7 @@ public class Bhabha extends Driver {
         totg+=g;
 	eventNumber++;
     }//End Process
+
 
     /*here all the classwide variables are declared*/
     private int eventNumber, totEvs;

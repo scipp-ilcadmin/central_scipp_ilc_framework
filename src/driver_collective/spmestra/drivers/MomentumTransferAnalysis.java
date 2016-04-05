@@ -95,6 +95,22 @@ public class MomentumTransferAnalysis extends Driver {
       try {
          for (MCParticle p : event.getMCParticles() ) {
             int ID = p.getPDGID();
+ 
+            // for comparison to stfhep-----------------------------
+            double x, y, z, mag, En;
+            x = p.getPX(); y = p.getPY(); z = p.getPZ();
+            //mag = p.getMomentum().magnitude();
+            mag = Math.sqrt( x*x + y*y + z*z );             
+            En = p.getEnergy();
+            System.out.println ( "Parents: "+p.getParents().toString() );
+            System.out.println ( "Self:    "+p.toString() );
+            System.out.println("ID: "+ID);
+            System.out.println("State: "+p.getGeneratorStatus() );
+            System.out.printf("(%.3f, %.3f, %.3f) \n", x, y, z);
+            System.out.println("Pmag: "+mag);
+            System.out.println("E: "+En+"\n");
+            // end of comparisons-------------------------------------
+
             boolean fin_st =(p.getGeneratorStatus()==MCParticle.FINAL_STATE);
             boolean primary = ( p.getParents().size()==0 ||
                                 p.getParents().size()==2 );
