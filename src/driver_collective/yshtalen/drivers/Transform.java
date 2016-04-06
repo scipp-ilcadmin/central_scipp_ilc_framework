@@ -9,16 +9,17 @@ package scipp_ilc.drivers;
 import scipp_ilc.base.util.PolarCoords;
 import scipp_ilc.base.util.LCIOFileManager;
 import scipp_ilc.base.util.Jroot;
+import scipp_ilc.base.util.ScippUtils;
 
 import org.lcsim.event.EventHeader;
 import org.lcsim.event.MCParticle;
 
 import hep.physics.particle.properties.ParticleType;
 
-import org.lcsim.util.Driver;
-
 import java.lang.String;
 import java.util.Arrays;
+
+import org.lcsim.util.Driver;
 
 public class Transform extends Driver {
 
@@ -52,25 +53,6 @@ public class Transform extends Driver {
         }
     }
 
-	private double[] transformLorentz(double[] p, double E){
-        double theta = inc_ang;
-        double in_E = 250.0;
-        double beta = Math.sin(theta);
-        double gamma = Math.pow((1-Math.pow(beta, 2)), -0.5);
-        double[] outVec = new double[4];
-
-    /*
-     * |gamma         -gamma*beta| |p|                       |p'|
-     * |-gamma*beta         gamma|*|E| = transformed 4vector |E'|
-     *
-    */
-        outVec[0] = p[0]*gamma - gamma*beta*E;
-        outVec[1] = p[1];
-        outVec[2] = p[2];
-        outVec[3] = E*gamma - gamma*beta*p[0];
-        return outVec;
-
-    }
     
     public void process( EventHeader event){
         super.process(event);
@@ -89,7 +71,7 @@ public class Transform extends Driver {
             if(stat == MCParticle.FINAL_STATE){
                 x_sum += p.getPX();
                 y_sum += p.getPY();
-                double[] mom = transformLorentz(p.getMomentum().v(), p.getEnergy());
+                double[] mom = ScippUtils.transform(p.getMomentum().v(), p.getEnergy());
                 x_tsum += mom[0];
                 y_tsum += mom[1];
 

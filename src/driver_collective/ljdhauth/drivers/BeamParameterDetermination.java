@@ -34,7 +34,9 @@ import org.lcsim.event.SimCalorimeterHit;
 import org.lcsim.util.Driver;
 import org.lcsim.util.Driver.NextEventException;
 
-import hep.physics.jet.EventShape;
+//import hep.physics.jet.EventShape;
+import scipp_ilc.drivers.EventShape; 
+//Import the EventShape class, customized to allow for larger list
 import hep.physics.particle.Particle;
 import hep.physics.vec.Hep3Vector;
 import hep.physics.vec.BasicHep3Vector;
@@ -220,29 +222,39 @@ public class BeamParameterDetermination extends Driver {
     }
     //Compute thrust axis and value
     public void compute_Thrust(List<SimCalorimeterHit> hits, EventHeader event){
-	   EventShape es = new EventShape();
-	   /*
-	     List<BasicHep3Vector> vecs = new ArrayList<BasicHep3Vector>();
-	     for(SimCalorimeterHit hit: hits){
-	     BasicHep3Vector a = new BasicHep3Vector(hit.getPosition());
-	     vecs.add(a);
-	     }
-	     es.setEvent(vecs);
-	   */
-	   List<MCParticle> final_Particles = new ArrayList<MCParticle>();
-	   int counter = 0;
-	   for(MCParticle p: event.getMCParticles()){
-	       if(p.getGeneratorStatus() == MCParticle.FINAL_STATE){
-		   final_Particles.add(p);
-	       }
-	       if(counter > 990) break;
-	       counter++;
-	   }
-	   List<Hep3Vector> momentaList = new ArrayList<Hep3Vector>();
-	   for(MCParticle p: final_Particles){ momentaList.add(p.getMomentum());}
-	   es.setEvent(momentaList);
-	   Hep3Vector thrust = es.thrustAxis();
-	   System.out.println("The thrust is " + thrust.magnitude());
+	
+	//Thrust quantities computed from Calorimeter hits (POSITION ONLY!)
+	EventShape es_hits = new EventShape();
+	List<BasicHep3Vector> vecs = new ArrayList<BasicHep3Vector>();
+	for(SimCalorimeterHit hit: hits){
+	    if(hit.getPosition()[2] > 0){
+		BasicHep3Vector a = new BasicHep3Vector(hit.getPosition());
+		vecs.add(a);
+	    }
+	}
+	es_hits.setEvent(vecs);
+	Hep3Vector thrust_hits = es_hits.thrustAxis();
+	System.out.println("The thrust fromt hits is " + thrust_hits.magnitude());
+	
+	//Thrust quantities computed from final state particles(traditional jets?)
+	EventShape es_fParticles = new EventShape();
+	List<MCParticle> final_Particles = new ArrayList<MCParticle>();
+	int counter = 0;
+	for(MCParticle p: event.getMCParticles()){
+	    if(p.getGeneratorStatus() == MCParticle.FINAL_STATE){
+		final_Particles.add(p);
+	    }
+	    if(counter > 100000) break; //Don't go over maximum
+	    counter++;
+	}
+	
+	List<Hep3Vector> momentaList = new ArrayList<Hep3Vector>();
+	for(MCParticle p: final_Particles){ momentaList.add(p.getMomentum());}
+	es_fParticles.setEvent(momentaList);
+	Hep3Vector thrust = es_fParticles.thrustAxis();
+	System.out.println("The thrust from final state particles is " + thrust.magnitude());
+	//System.out.println("The number of hits in this event is " + countHits);
+	//System.out.println("The number of f_Particles in this event is " + countfinalParticles);
     }
     
 
@@ -277,17 +289,16 @@ public class BeamParameterDetermination extends Driver {
 	int layerOfMaxE = 0;
 	double[] eDep = new double[25];
 
-	try {
-	    
+	try {	    
 	    compute_meanDepth(hits);
 	    compute_Thrust(hits, event);
+	    
 	    // loop through the List of <SimCalHits..>
             for (SimCalorimeterHit hit : hits) {
                 double[] vec = hit.getPosition();
 		int layer = hit.getLayerNumber();
 		if ( reject_negative && (vec[2]<0) ){ layersHit2.add(layer);} //pass over event
-                else {
-		    
+                else {		    
 	            double energy = hit.getRawEnergy();
 		    assym_LR(vec, energy);
 		    assym_TD(vec, energy);
