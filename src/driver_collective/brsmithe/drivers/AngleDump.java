@@ -59,7 +59,7 @@ public class AngleDump extends Driver {
 	
             root.init("TH2D","posXY","posXY", "XYPosition", 300, -150, 150, 300, -150, 150);
             root.init("TH1D","posz","posz", "Z Position", 18000, 0, 25000);
-	    root.init("TH2D", "theta", "theta", "Theta Z Position", 18000, 0, 1800, 180, -6, 6);
+	    root.init("TH2D", "theta", "theta", "Theta Z Position", 700, 2800, 3150, 200, 0, 6);
             
         }
         catch (java.io.IOException e) {
@@ -98,7 +98,6 @@ public class AngleDump extends Driver {
 
         
         //iterate through all FINAL_STATE particles in event
-	ArrayList<Double> anglelist=new ArrayList<Double>();
         for (MCParticle p : event.getMCParticles()) {
             
             int state = p.getGeneratorStatus();
@@ -121,11 +120,13 @@ public class AngleDump extends Driver {
 		//System.out.println("mx: " + momentum[0] + "my: " + momentum[1] + "mz: " +momentum[2]);
 		//System.out.println("ox: " + org[0] + "oy: " + org[1] + "oz: " +org[2]);
 		
-		double theta;
-		double term1=(momentum[1]*pos[0]-pos[1]*momentum[0]);
-		double term2=(pos[0]*pos[0]+pos[1]*pos[1]);
-		theta = term1/term2;
-		anglelist.add(theta);
+		/*
+		 *double theta;
+		 *double term1=(momentum[1]*pos[0]-pos[1]*momentum[0]);
+		 *double term2=(pos[0]*pos[0]+pos[1]*pos[1]);
+		 *theta = term1/term2;
+		 *anglelist.add(theta);
+		*/
 
 		// First, finding the magnitude squared of the momentum, rsq. Then, finding its root. 
 		double rsq = momentum[0]*momentum[0] + momentum[1]*momentum[1] + momentum[2]*momentum[2];
@@ -138,11 +139,19 @@ public class AngleDump extends Driver {
 	        double angle = Math.acos(momentum[2]/arr);
 		
 		
-                //fill position plot
+                // Focus options
+		boolean neglect = true;
+		int lower = 2800;
+		int upper = 3150;
+		
+
+		// Fill position plot
                 try {
+		    if(!(neglect && (pos[2]<2800 ||pos[2]>3100)) ){ 
                      root.fill("posXY",pos[0], pos[1]);
                      root.fill("posz",pos[2]);
 		     root.fill("theta",pos[2],angle);
+		    }
                 }
                 catch (java.io.IOException e) {
                      System.out.println(e);
@@ -151,14 +160,17 @@ public class AngleDump extends Driver {
                 //System.out.println("\n");
             }
         }
-	double sum = 0;
-	for (double angle: anglelist){
-	    sum += angle;
-	}
-	double aver;
-	aver= sum / anglelist.size();
-	System.out.println("The Average Spin is: "+ aver);
-	System.out.println("FINISHED EVENT "  + eventNumber++ + "\n\n\n\n\n");
+	/*
+	 *double sum = 0;
+	 *for (double angle: anglelist){
+	 *   sum += angle;
+	 *}
+	 *
+	 *double aver;
+	 *aver= sum / anglelist.size();
+	 *System.out.println("The Average Spin is: "+ aver);
+	 */
+	 System.out.println("FINISHED EVENT "  + eventNumber++ + "\n\n\n\n\n");
      
     }//End Process
     
