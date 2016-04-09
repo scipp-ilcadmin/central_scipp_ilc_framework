@@ -167,7 +167,7 @@ public class BeamParameterDetermination extends Driver {
 	return pwrDraw; // in Watts, [01/29/16]
     }
 
-    //*************************************************************************************//
+    //************END OF POWER***********************************************************************//
 
 
     //In testing
@@ -227,14 +227,16 @@ public class BeamParameterDetermination extends Driver {
 	EventShape es_hits = new EventShape();
 	List<BasicHep3Vector> vecs = new ArrayList<BasicHep3Vector>();
 	for(SimCalorimeterHit hit: hits){
-	    if(hit.getPosition()[2] > 0){
+	    if(hit.getPosition()[2] > 0){;}//keep negative and positive
 		BasicHep3Vector a = new BasicHep3Vector(hit.getPosition());
+		a.setV(a.x(),a.y(),0);
 		vecs.add(a);
-	    }
+	    
 	}
 	es_hits.setEvent(vecs);
-	Hep3Vector thrust_hits = es_hits.thrustAxis();
-	System.out.println("The thrust fromt hits is " + thrust_hits.magnitude());
+	Hep3Vector thrustAxis_hits = es_hits.thrustAxis();
+	System.out.println("The thrust fromt hits is " + thrustAxis_hits.magnitude());
+	System.out.println("The thrustAxis from hits is " + thrustAxis_hits.toString());
 	
 	//Thrust quantities computed from final state particles(traditional jets?)
 	EventShape es_fParticles = new EventShape();

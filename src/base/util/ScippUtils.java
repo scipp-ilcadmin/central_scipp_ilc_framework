@@ -2,8 +2,9 @@
  * ScippUtils.java.
  *
  * Created on Aug 28 2014, 01:50 AM
- *
+ * Last Edited Apr 5, 2016, 9:11 PM
  * @author Christopher Milke
+ * edited by J. Shtalenkova
  * @version 1.0 
  * 
  */
@@ -25,6 +26,29 @@ import java.lang.Math;
 
 public class ScippUtils {
     
+    
+    //METHODS: TRANSFORM- IN: (px, py, pz), and E
+    //                    OUT: (px', py', pz', E')  
+    public static double[] transform(double[] p, double E){
+        double theta = inc_ang;
+        double in_E = E_e;
+        double beta = Math.sin(theta);
+        double gamma = Math.pow((1-Math.pow(beta, 2)), -0.5);
+        double[] cm_Vec = new double[4];
+
+        /*
+         *       |gamma         -gamma*beta| |p|                       |p'|
+         *       |-gamma*beta         gamma|*|E| = TRANSOFORMED4vector |E'|
+         *  
+         *      */
+    
+        cm_Vec[0] = p[0]*gamma - gamma*beta*E;
+        cm_Vec[1] = p[1];
+        cm_Vec[2] = p[2];
+        cm_Vec[3] = E*gamma - gamma*beta*p[0];
+        return cm_Vec;
+    }
+        
     //Get electron signal event and ensure it actually hits the detector
     public static EventHeader getProperEvent(LCIOFileManager mngr) {
         EventHeader signalEvent = mngr.nextEvent();
@@ -93,38 +117,7 @@ public class ScippUtils {
         return (beamCalFront < vec[2] && vec[2] < beamCalRear);
     }
 
-    /*public static TileParameters generateParams(String parameter_string) {
-        TileParameters params = null;
-
-        String[] parameters = parameter_string.split(",");
-        String paramType = parameters[0];
-        
-        if ( paramType.equals("Arc") ) {
-            int pn = 9;
-            float[] p = new float[pn];
-            for (int i=1;i<pn;i++) p[i]=Float.parseFloat(parameters[i]);
-            params = new ArcTileParameters(p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8]);
-
-        } else if ( paramType.equals("Cubic") ) {
-            int pn = 9;
-            float[] p = new float[pn];
-            for (int i=1;i<pn;i++) p[i]=Float.parseFloat(parameters[i]);
-            params = new CubicTileParameters(p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8]);
-
-        } else if ( paramType.equals("Phi") ) {
-            int pn = 7;
-            float[] p = new float[pn];
-            for (int i=1;i<pn;i++) p[i]=Float.parseFloat(parameters[i]);
-            params = new PhiTileParameters(p[1],p[2],p[3],p[4],p[5],p[6]);
-
-        } else {
-            System.out.println("no matching parameter type to: \"" + paramType + "\"");
-            System.exit(1);
-        }
-
-        return params;
-        
-        
-    } */
-    
+   //global vars
+   public static final double inc_ang = 0.007;  //incident angle, rads
+   public static final double E_e = 250.0;      //incident electron enegry, GeV
 }

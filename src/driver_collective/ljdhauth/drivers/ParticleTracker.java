@@ -21,7 +21,7 @@ import org.lcsim.util.Driver;
 import java.util.List;
 
 
-public class EventAnalysis extends Driver {
+public class ParticleTracker extends Driver {
     
     
     //DEFINE XML FUNCTIONS
@@ -59,7 +59,6 @@ public class EventAnalysis extends Driver {
         try {
             root = new Jroot(jrootFile,root_mode);
             
-            /* PLOTS */ 
             root.init("TH1D","hist1","posz","z position",2000,2000,4000);
             root.init("TH2D","scatter1","posxy","X Y Hit Occupancy Over All Layers", 350, -175, 175, 350, -175, 175);        
             root.init("TH2D","heatmapAll","heatAll","X Y Energy over All Layers", 350, -175, 175, 350, -175, 175);
@@ -76,8 +75,6 @@ public class EventAnalysis extends Driver {
     public void endOfData(){
         try {
             root.end();
-
-            /* FINAL OUTPUT */
         }
         catch (java.io.IOException e) {
            System.out.println(e);

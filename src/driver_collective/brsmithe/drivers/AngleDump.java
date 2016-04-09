@@ -59,7 +59,7 @@ public class AngleDump extends Driver {
 	
             root.init("TH2D","posXY","posXY", "XYPosition", 300, -150, 150, 300, -150, 150);
             root.init("TH1D","posz","posz", "Z Position", 18000, 0, 25000);
-	    root.init("TH2D", "theta", "theta", "Theta Z Position", 700, 2800, 3150, 200, 0, 6);
+	    root.init("TH2D", "theta", "theta", "Theta Z Position", 6200, 2800, 8200, 200, 0, 1);
             
         }
         catch (java.io.IOException e) {
@@ -140,9 +140,12 @@ public class AngleDump extends Driver {
 		
 		
                 // Focus options
-		boolean neglect = true;
+		boolean neglect = false;
 		int lower = 2800;
 		int upper = 3150;
+		if(pos[2]>8000 && neglect==false){
+		    pos[2]=8000;
+		}
 		
 
 		// Fill position plot

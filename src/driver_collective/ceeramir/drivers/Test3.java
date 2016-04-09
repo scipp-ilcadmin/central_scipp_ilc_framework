@@ -21,7 +21,7 @@ import org.lcsim.util.Driver;
 import java.util.List;
 
 
-public class EventAnalysis extends Driver {
+public class Test3 extends Driver {
     
     
     //DEFINE XML FUNCTIONS
@@ -61,6 +61,7 @@ public class EventAnalysis extends Driver {
             
             /* PLOTS */ 
             root.init("TH1D","hist1","posz","z position",2000,2000,4000);
+            root.init("TH1D","histn","negz","z negative-position",2000,-4000,-2000);
             root.init("TH2D","scatter1","posxy","X Y Hit Occupancy Over All Layers", 350, -175, 175, 350, -175, 175);        
             root.init("TH2D","heatmapAll","heatAll","X Y Energy over All Layers", 350, -175, 175, 350, -175, 175);
             
@@ -104,8 +105,10 @@ public class EventAnalysis extends Driver {
                 if (aligned) vec = PolarCoords.ZtoBeamOut(vec[0],vec[1],vec[2]);
                 int layer = hit.getLayerNumber();
                 
-                if ( reject_negative && (vec[2]<0) ); //pass over event
-                else {
+                if ( reject_negative && (vec[2]<0) ){  //fills negative events
+		    root.fill("histn",vec[2]);
+		}
+                else {// fills positive events
                     root.fill("hist1",vec[2]);
                     root.fill("scatter1",vec[0],vec[1]);            
                     
