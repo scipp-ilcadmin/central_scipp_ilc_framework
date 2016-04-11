@@ -198,28 +198,45 @@ public class BeamParameterDetermination extends Driver {
         sum_TD_post += pos[1]*hitEnergy; //weight hit position by energy
         return;
     }
-    //Compute mean shower depth
+    //Compute mean shower depth (NOTE: Layers start at 1, instead of the usual 0 here)
     public void compute_meanDepth(List<SimCalorimeterHit> hits){
+	double[] eDep = new double[51];
+	int[] hitLayerArray = new int[51];
 	double energyDepth_productSum = 0; // sum of the products of energy*depth
 	double energyDepthL_productSum = 0; // sum of the products of energy*depth
+	double hitDepthL = 0;
 	double sumOfEnergy = 0;
+	int hitnum = 0;
+	
 	for(SimCalorimeterHit hit: hits){	    
 	    double[] vec = hit.getPosition();
-	    if(vec[2] < 0){ /*pass negative beamcal*/}
-	    else{
-	    double[] transformed_Vec = PolarCoords.ZtoBeamOut(vec[0],vec[1],vec[2]);
-	    double energy = hit.getRawEnergy();
-	    sumOfEnergy += energy;
-	    energyDepth_productSum += energy*transformed_Vec[2];
-	    energyDepthL_productSum += energy*hit.getLayerNumber();
+	    if(vec[2] > 0){
+		double[] transformed_Vec = PolarCoords.ZtoBeamOut(vec[0],vec[1],vec[2]);
+		double energy = hit.getRawEnergy();
+		sumOfEnergy += energy;
+		hitnum++;
+		eDep[hit.getLayerNumber()+1] += hit.getRawEnergy();
+		hitLayerArray[hit.getLayerNumber()+1]++;
+		energyDepth_productSum += energy*transformed_Vec[2];
+		energyDepthL_productSum += energy*(hit.getLayerNumber()+1);
+		hitDepthL += hit.getLayerNumber()+1;
 	    }
+	    else{/*dosomethingwith negative hits?*/}
 	}
+	
+	hitDepthL = hitDepthL/hitnum;
+	System.out.println("E total deposited" + sumOfEnergy);
+	System.out.println("E deposited" + Arrays.toString(eDep));
+	System.out.println("Hits by layer" + Arrays.toString(hitLayerArray));
+	System.out.println("Hit number based:" + hitDepthL);
+	
 	meanDepth_Z = energyDepth_productSum/sumOfEnergy;
 	meanDepth_Layer = energyDepthL_productSum/sumOfEnergy;
+	System.out.println("Energy based:");
 	System.out.println("Mean depth is " + meanDepth_Z);
-	System.out.println("Mean Layer is " + meanDepth_Layer);
-	
+	System.out.println("Mean Layer is " + meanDepth_Layer);	
     }
+
     //Compute thrust axis and value
     public void compute_Thrust(List<SimCalorimeterHit> hits, EventHeader event){
 	
@@ -227,11 +244,10 @@ public class BeamParameterDetermination extends Driver {
 	EventShape es_hits = new EventShape();
 	List<BasicHep3Vector> vecs = new ArrayList<BasicHep3Vector>();
 	for(SimCalorimeterHit hit: hits){
-	    if(hit.getPosition()[2] > 0){;}//keep negative and positive
+	    if(hit.getPosition()[2] > 0){;}//keep only positive
 		BasicHep3Vector a = new BasicHep3Vector(hit.getPosition());
 		a.setV(a.x(),a.y(),0);
-		vecs.add(a);
-	    
+		vecs.add(a);	    
 	}
 	es_hits.setEvent(vecs);
 	Hep3Vector thrustAxis_hits = es_hits.thrustAxis();
@@ -289,8 +305,6 @@ public class BeamParameterDetermination extends Driver {
 	double sumOfPowerDrawn = 0;
         double maxPixelEnergy = 0;
 	int layerOfMaxE = 0;
-	double[] eDep = new double[25];
-
 	try {	    
 	    compute_meanDepth(hits);
 	    compute_Thrust(hits, event);

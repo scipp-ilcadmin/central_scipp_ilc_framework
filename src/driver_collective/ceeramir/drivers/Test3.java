@@ -62,8 +62,8 @@ public class Test3 extends Driver {
             /* PLOTS */ 
             root.init("TH1D","hist1","posz","z position",2000,2000,4000);
             root.init("TH1D","histn","negz","z negative-position",2000,-4000,-2000);
-            root.init("TH2D","scatter1","posxy","X Y Hit Occupancy Over All Layers", 350, -175, 175, 350, -175, 175);        
-            root.init("TH2D","heatmapAll","heatAll","X Y Energy over All Layers", 350, -175, 175, 350, -175, 175);
+            root.init("TH2D","scatter1","posxy","X Y Hit Occupancy Over All Layers", 350, -1000, 1000, 350,-1000, 1000);        
+            root.init("TH2D","heatmapAll","heatAll","X Y Energy over All Layers", 350, 0, 1000, 350, 0, 1000);
             
         } catch(java.io.IOException e) {
             System.out.println(e);
@@ -90,7 +90,8 @@ public class Test3 extends Driver {
     //This is where the vast bulk of the program is run and controlled
     public void process( EventHeader event ) {
         super.process( event );
-        List<SimCalorimeterHit> hits = event.get(SimCalorimeterHit.class, "BeamCalHits");
+	//        List<SimCalorimeterHit> hits = event.get(SimCalorimeterHit.class, "BeamCalHits");
+        List<SimCalorimeterHit> hits = event.get(SimCalorimeterHit.class, "HcalEndcapHits");
         
         int check_layer = 0;
         int hit_count_limit = 100;
