@@ -83,7 +83,7 @@ public class StdhepQ extends Driver {
 
          //file process loop
          int total = 0;
-         int limit = 1000000;
+         int limit = 200;
          for(String filename: stdhepfilelist) {
             StdhepReader reader = new StdhepReader(filename);
             for (int i=0;i<reader.getNumberOfEvents();i++) {
@@ -111,7 +111,8 @@ public class StdhepQ extends Driver {
       // Array to hold perpindicular momenta
       double x_tot = 0; double y_tot = 0;
       try{
-         //System.out.println("\n=======================================\n");
+         System.out.println("\n=======================================\n");
+         System.out.println("\n"+n+" particle event\n");
          for ( int p = 0; p<n; p++) {
             int ID = event.getIDHEP( p );                           
             boolean fin_st = ( event.getISTHEP( p ) == FINAL_STATE);
@@ -126,30 +127,41 @@ public class StdhepQ extends Driver {
             double En = event.getPHEP(p, 3);
             
             // For comparison to LCIO values
-            //if ( (ID==11 || ID==-11) && ( y+z>0.0 || x+y<0.0 ) ){
-            //   double mag = Math.sqrt( x*x + y*y + z*z );
-            //   int par0 = event.getJMOHEP(p, 0);
-            //   int par1 = event.getJMOHEP(p, 1);
-            //   System.out.println ( "Parents: "+par0+", "+par1 );
-            //   System.out.println ( "Self: "+p);
-            //   System.out.println("ID: "+ID);
-            //   System.out.println("State: "+event.getISTHEP(p) );
-            //   System.out.printf("P: (%.3f, %.3f, %.3f) \n", x, y, z);
-            //   System.out.println("Pmag: "+mag);
-            //   System.out.printf("r: (%.3f, %.3f, %.3f) \n", u, v, w);
-            //   System.out.println("E: "+En+"\n");
+            //if ( ID==11 || ID==(-11) ){ // && ( y+z>0.0 || x+y<0.0 ) ){
+               double mag = Math.sqrt( x*x + y*y + z*z );
+               int par0 = event.getJMOHEP(p, 0);
+               int par1 = event.getJMOHEP(p, 1);
+               
+               System.out.println ( "Parents: "+par0+", "+par1 );
+               System.out.println ( "Self: "+p);
+	       if(ID==11 || ID==-11) System.out.println("====>ID: "+ID+"<====");
+               else System.out.println("ID: "+ID);
+               System.out.println("State: "+event.getISTHEP(p) );
+               System.out.printf("P: (%.8f, %.8f, %.8f) \n", x, y, z);
+               System.out.println("Pmag: "+mag);
+               System.out.printf("r: (%.8f, %.8f, %.8f) \n", u, v, w);
+               System.out.println("E: "+En+"\n");
             //}
             // End comparisons
 
             boolean neutrino = (ID==12 || ID==14 || ID==16 || ID==18 );
             if( !neutrino && fin_st ){
                // Want max of Positron and Electron Q
-               if( p==n-2 || p==n-1 ){
-                  double R = getQ(x, y, z, En);
+               if( (ID==11||ID==-11) && En>100.0 ){
+                  
+               //System.out.println ( "Parents: "+par0+", "+par1 );
+               //System.out.println ( "Self: "+p);
+               //System.out.println("ID: "+ID);
+               //System.out.println("State: "+event.getISTHEP(p) );
+               //System.out.printf("P: (%.3f, %.3f, %.3f) \n", x, y, z);
+               //System.out.println("Pmag: "+mag);
+               //System.out.printf("r: (%.3f, %.3f, %.3f) \n", u, v, w);
+               //System.out.println("E: "+En+"\n");
+                  double R = getQ( x, y, z, En);
                   if ( R>Q ) Q = R;
                }
                // Vector summmation of all resultant particle perp momentum
-               else if ( !neutrino ){
+               else {
                   x_tot+=x; y_tot+=y;
                }
             }

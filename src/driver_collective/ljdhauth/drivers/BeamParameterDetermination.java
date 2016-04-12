@@ -1,4 +1,4 @@
-/*
+ /*
  * BeamParameterDetermination.java
  *
  * This driver looks to measure observables
@@ -123,51 +123,8 @@ public class BeamParameterDetermination extends Driver {
         }
     }
 
-
-
     //******************************Power Analysis******************************************//
-
-    // Computes the radiation dosage of a pixel over x years based on the energyPerCrossing.
-    public double radDosage(double energyPerCrossing){
-	int x_years = 3; //number of years
-	double n_y = 125*Math.pow(10,9); //Crossings in 1 year
-	double EDepYear = energyPerCrossing*n_y*x_years;
-	double pixelArea = Math.pow(10,-2); //Pixel Area in cm^2
-	double Eparticle = 120*Math.pow(10,-6); // Eparticle(120 keV -> 0.000120 GeV) 
-	double numberPrtcles = (EDepYear/pixelArea)/(Eparticle); //Flux (# of prtcles through pixelArea)
-	double RAD = 4*Math.pow(10,7); //# particles through a cm^2 = 1 Rad
-	double radDosage = numberPrtcles/(RAD);
-	return radDosage;
-    }
-
-    // Computes leakage current at 600V as a function of Temperature
-    // in Celsius based on Wyatt's data(PF sensor, 300 MRads) 
-    public double getCurrent(double T){
-	double I = 5.79338*Math.pow(10,-6) + (7.39127*Math.pow(10,-7))*T + 
-	    4.15927*Math.pow(10,-8)*Math.pow(T,2) + 8.9582*Math.pow(10,-10)*Math.pow(T,3);
-	return I;
-    }
-    // Computes power drawn, in [W], per cm^2 from data based on A_sensor = 0.025cm^2 
-    public double getRawPower(double T){
-	double I = getCurrent(T);
-	double biasVoltage = 600;
-	double s = 40;// scale factor to convert to pwr/cm^2 
-	return s*biasVoltage*I;
-    }
-    // Returns power draw in mW for a pixel, given 
-    // radiation dosage and temperature.
-    public double powerDraw(double radDosage, double T){
-	double pixelArea = Math.pow(10,-2);
-	//double slope_PwrDraw = (80)/(3*Math.pow(10,8)); //80mW/cm^2 / 300 MRads //[01/29/16]
-	double slope_PwrDraw = (1)/(2.7*Math.pow(10,8)); //Linear scaling factor(3->2.7 *10^8 Rads) 
-	//slope_PwrDraw *= (1/10^2); //Since our pixels are (10^-2) cm^2 
-	double pwrPerSquarecm = (radDosage*slope_PwrDraw)*getRawPower(T); 
-	//obtain power draw per cm^2, for such a radiation dosage
-	double pwrDraw = pwrPerSquarecm* pixelArea;//Obtain pwr draw for this pixel
-	return pwrDraw; // in Watts, [01/29/16]
-    }
-
-    //************END OF POWER***********************************************************************//
+    //************END OF POWER**************************************************************//
 
 
     //In testing
@@ -176,26 +133,34 @@ public class BeamParameterDetermination extends Driver {
 	if(energy> currMax) newMax = energy;
 	return newMax;
     }
-    //Computes the LR assymetries based on hit coordinates
-    //*Need to be weighted by energy
+    
+    /*
     public void assym_LR(double[] pos, double hitEnergy){
 	//System.out.println(sum_LR);
 	sum_LR += pos[0]*hitEnergy;//weight hit position by energy 
 	return;
-    }
+	}
+    public void assym_TD(double[] pos, double hitEnergy){
+        //System.out.println(sum_TD);
+	sum_TD += pos[1]*hitEnergy;//weight hit position by energy
+        return;
+	}
+*/
+
+    //Computes the LR assymetries based on hit coordinates
+    //*Need to be weighted by energy
+    
     public void assym_LR_postTransform(double[] pos, double hitEnergy){
         //System.out.println(sum_LR_post);
-        sum_LR_post += pos[0]*hitEnergy; //weight hit position by energy
+        sum_LR_E += pos[0]*hitEnergy; //weight hit position by energy
+	sum_LR_Hits += pos[0];
         return;
     }
-    public void assym_TD(double[] pos, double hitEnergy){
-        //System.out.println(sum_TD);                                                                                                   
-        sum_TD += pos[1]*hitEnergy;//weight hit position by energy
-        return;
-    }
+
     public void assym_TD_postTransform(double[] pos, double hitEnergy){
         //System.out.println(sum_LR_post);
-        sum_TD_post += pos[1]*hitEnergy; //weight hit position by energy
+        sum_TD_E += pos[1]*hitEnergy; //weight hit position by energy
+	sum_TD_Hits += pos[1];
         return;
     }
     //Compute mean shower depth (NOTE: Layers start at 1, instead of the usual 0 here)
@@ -238,17 +203,47 @@ public class BeamParameterDetermination extends Driver {
     }
 
     //Compute thrust axis and value
-    public void compute_Thrust(List<SimCalorimeterHit> hits, EventHeader event){
-	
+    public void compute_Thrust(List<SimCalorimeterHit> hits, EventHeader event){	
 	//Thrust quantities computed from Calorimeter hits (POSITION ONLY!)
 	EventShape es_hits = new EventShape();
-	List<BasicHep3Vector> vecs = new ArrayList<BasicHep3Vector>();
+	List<BasicHep3Vector> vecs2 = new ArrayList<BasicHep3Vector>();
+	double eSum = 0;
 	for(SimCalorimeterHit hit: hits){
-	    if(hit.getPosition()[2] > 0){;}//keep only positive
+	    if(hit.getPosition()[2] > 0){//keep only positive
 		BasicHep3Vector a = new BasicHep3Vector(hit.getPosition());
 		a.setV(a.x(),a.y(),0);
-		vecs.add(a);	    
+		//double energy = hit.getRawEnergy();
+		//a.setV(energy*a.x(), energy*a.y(),0);
+		vecs2.add(a);	    
+		//eSum += energy;
+	    }
 	}
+	double x_avg = 0;
+	double y_avg = 0;
+	double c =0;
+	for(BasicHep3Vector hitPos_Eweight: vecs2){
+	    x_avg+= hitPos_Eweight.x();
+	    y_avg+= hitPos_Eweight.y();
+	    c++;
+	}
+	x_avg = x_avg/c;
+	y_avg = y_avg/c;
+	System.out.println("X_avg is" + x_avg);
+	System.out.println("Y_avg is" + y_avg);
+
+	List<BasicHep3Vector> vecs = new ArrayList<BasicHep3Vector>();
+        for(SimCalorimeterHit hit: hits){
+            if(hit.getPosition()[2] > 0){//keep only positive                                                           
+		BasicHep3Vector a = new BasicHep3Vector(hit.getPosition());
+		
+		//a.setV(a.x(),a.y(),0);
+		//double energy =hit.getRawEnergy();
+		//eSum += energy;
+		a.setV(a.x() - x_avg, a.y() - y_avg,0);
+		vecs.add(a);
+	    }
+        }
+
 	es_hits.setEvent(vecs);
 	Hep3Vector thrustAxis_hits = es_hits.thrustAxis();
 	System.out.println("The thrust fromt hits is " + thrustAxis_hits.magnitude());
@@ -307,7 +302,7 @@ public class BeamParameterDetermination extends Driver {
 	int layerOfMaxE = 0;
 	try {	    
 	    compute_meanDepth(hits);
-	    compute_Thrust(hits, event);
+	    compute_Thrust(hits,event);
 	    
 	    // loop through the List of <SimCalHits..>
             for (SimCalorimeterHit hit : hits) {

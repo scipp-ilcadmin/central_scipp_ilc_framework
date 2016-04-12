@@ -9,6 +9,7 @@ package scipp_ilc.drivers;
 import scipp_ilc.base.util.LCIOFileManager;
 import scipp_ilc.base.util.PolarCoords;
 import scipp_ilc.base.util.Jroot;
+import scipp_ilc.base.util.ScippUtils;
 
 import org.lcsim.event.EventHeader;
 import org.lcsim.event.MCParticle;
@@ -96,20 +97,32 @@ public class MomentumTransferAnalysis extends Driver {
          for (MCParticle p : event.getMCParticles() ) {
             int ID = p.getPDGID();
  
-            // for comparison to stfhep-----------------------------
             double x, y, z, mag, En;
             x = p.getPX(); y = p.getPY(); z = p.getPZ();
-            //mag = p.getMomentum().magnitude();
-            mag = Math.sqrt( x*x + y*y + z*z );             
+            
+            // Lorentz Transformation
+            double[] pv = {x, y, z};
             En = p.getEnergy();
-            System.out.println ( "Parents: "+p.getParents().toString() );
-            System.out.println ( "Self:    "+p.toString() );
-            System.out.println("ID: "+ID);
+            pv = ScippUtils.transform( pv, En ); 
+            mag = Math.sqrt( x*x + y*y + z*z );             
+            x = pv[0]; y = pv[1]; z = pv[2];
+
+            //int par0 = event.getJMOHEP(p, 0);
+            //int par1 = event.getJMOHEP(p, 1);
+
+            //System.out.println ( "Parents: "+par0+", "+par1 );
+            //System.out.println ( "Self: "+p);
+            if(ID==11 || ID==-11) System.out.println("====>ID: "+ID+"<====");
+            else System.out.println("ID: "+ID);
             System.out.println("State: "+p.getGeneratorStatus() );
-            System.out.printf("(%.3f, %.3f, %.3f) \n", x, y, z);
+            System.out.printf("P: (%.8f, %.8f, %.8f) \n", x, y, z);
             System.out.println("Pmag: "+mag);
+            //System.out.printf("r: (%.8f, %.8f, %.8f) \n", u, v, w);
             System.out.println("E: "+En+"\n");
-            // end of comparisons-------------------------------------
+
+
+
+
 
             boolean fin_st =(p.getGeneratorStatus()==MCParticle.FINAL_STATE);
             boolean primary = ( p.getParents().size()==0 ||
@@ -118,12 +131,12 @@ public class MomentumTransferAnalysis extends Driver {
             if( fin_st && !neutrino ){
                // Want max of Positron and Electron Q
                if( primary ){
-                  double R = getQ(p);
+                  double R = getQ(x, y, z, En);
                   if ( R>Q ) Q = R;
                }
                // Vector summmation of all resultant particle perp momentum
                else {
-                  addPperp( pr, p );
+                  addPperp( pr, x, y );
                }
             }
             p_count++;
@@ -141,25 +154,16 @@ public class MomentumTransferAnalysis extends Driver {
 
    }//End Process
 
-   public static double magPxPy(MCParticle p){
-      double px = p.getPX(); double py = p.getPY();
-      double sum = Math.pow(px, 2) + Math.pow(py, 2);
-      return Math.pow(sum, .5);
-   }
-   
-   public static double getQ(MCParticle p){
-      double En = p.getEnergy();
-      double P = p.getMomentum().magnitude();
-      double x = p.getPX(); double y = p.getPY(); double z = p.getPZ();
+   // Measures momentum transfer of hi-energy electron, positron
+   public static double getQ(double x, double y, double z, double En){
       double r = Math.sqrt( Math.pow(x,2)+Math.pow(y,2)+Math.pow(z,2) );
-      double Q = 2*En*P*(1 - ( Math.abs(z)/r ) );
+      double Q = 2*En*r*(1 - ( Math.abs(z)/r ) );
       return Math.sqrt( Q );
    }
    
    // Vector addition of perpindicular momentum to existing vector
-   public static void addPperp( double[] v, MCParticle p ){
-      double px = p.getPX(); double py = p.getPY();
-      v[0]+=px; v[1]+=py;
+   public static void addPperp( double[] v, double x, double y ){
+      v[0]+=x; v[1]+=y;
    }
 
    public static double getTheta(MCParticle p){

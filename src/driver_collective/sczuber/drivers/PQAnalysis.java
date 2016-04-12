@@ -1,5 +1,5 @@
 /*
- * SusyKinematicAnalysis.java
+ * PQAnalysis.java
  *
  * Created on July 11, 2013, 10:45 AM
  * Edited on January 9, 2014, 12:31 AM
@@ -24,7 +24,7 @@ import org.lcsim.util.Driver;
 import java.lang.String;
 import java.lang.Math;
 import java.util.*;
-public class SusyKinematicAnalysis extends Driver {
+public class PQAnalysis extends Driver {
 
 
 
@@ -49,23 +49,16 @@ public class SusyKinematicAnalysis extends Driver {
     //and initializes all persistant data
     public void startOfData() {
         eventNumber = 0;
-        System.out.println("Running SusyKinematics");
+        System.out.println("Running PQAnalysis");
         //System.out.println("documentation = "+MCParticle.DOCUMENTATION);
         //System.out.println("final = "+MCParticle.FINAL_STATE);
         //System.out.println("intermediate = "+MCParticle.INTERMEDIATE);
         try {
             root = new Jroot(jrootFile, "NEW");
-            //root.init("TH2D","posXY","posXY", "XYPosition", 1000, -500, 500, 1000, -500, 500);
-            //root.init("TH1D","posz","posz", "Z Position", 18000, 0, 18000);
             root.init("TH1D","hist1", "SumPT", "Total PT of Final State Observable Particles with |cos(theta)|< 0.9",1000, 0,500);
             root.init("TH1D","hist2", "SumPTv2","Total sqrt(sumx^2+sumy^2) Final State Particles",1000,0,500);
-            root.init("TH1D","hist3","mult_1","Multiplicity of Charged Final State Observable Particles with |cos(theta)| > 0.9",500,0,500); //change to charged only
-            root.init("TH1D","hist4","mult_2","Multiplicity of Charged Final State Observable Particles with |cos(theta)| < 0.9",500,0,500); //change to charged only       
-            root.init("TH1D","hist5","mult_3","Multiplicity of Final State Observble Particles",500,0,500);
-            root.init("TH2D","P_cos", "P_cos","PT Final State (Observable) Particles vs Cosine(theta)", 400, -1, 1, 700, 0, 700);
-            root.init("TH2D","E_cos","E_cos","Energy Final State Particles of Cos(theta)", 400, -1, 1, 700, 0, 700);
-            root.init("TH2D","E_cos_gamma","E_cos_gamma","Energy FS Gamma of cos_theta",400,-1,1,1000,0,500);
-            root.init("TH2D","E_cos_ep","E_cos_ep","Energy FS e/p of cos_theta",400,-1,1,1000,0,500);
+            //root.init("TH2D","E_cos","E_cos","Energy Final State Particles of Cos(theta)", 400, -1, 1, 700, 0, 700);
+                      
         }
         catch (java.io.IOException e) {
             System.out.println(e);
@@ -101,11 +94,7 @@ public class SusyKinematicAnalysis extends Driver {
         List<Double> PX = new ArrayList<Double>();
         List<Double> PY = new ArrayList<Double>();   
         //System.out.println( event.keys() );
-        int mult_1 = 0; // > 0.9
-        int mult_2 = 0; // < 0.9
-        int mult_3 = 0; // all theta 
-
-
+       
         //iterate through all FINAL_STATE particles in event
         for (MCParticle p : event.getMCParticles()) {    
             int state = p.getGeneratorStatus();
@@ -117,101 +106,42 @@ public class SusyKinematicAnalysis extends Driver {
                 double momZ = p.getPZ();
                 double cos = momZ/mom;
                 double momX = p.getPX();
-                PX.add(momX);
                 double momY = p.getPY();
-                PY.add(momY);
                 double PT = Math.sqrt(momX*momX+momY*momY); 
                 double energy = p.getEnergy();
-                List<MCParticle> parents = p.getParents();
-                List<MCParticle> daughters = p.getDaughters();
-		        double charge = p.getCharge();
-                //System.out.println(type+" "+state);
-                //System.out.println("costheta: "+cos);
-                //System.out.println("P magnitude: "+mom);
-                //System.out.println("Energy: "+energy);
-                //System.out.println("Parents: "+parents);
-                for(int i = 0; i<parents.size(); i++){
-                    ParticleType parent = parents.get(i).getType();
-                    //System.out.println(parent);
-                }
-               // System.out.println("Daughters: " + daughters);
-                for(int i = 0; i<daughters.size(); i++){
-                    ParticleType daughter = daughters.get(i).getType();
-                    //System.out.println(daughter);
-                }
+                double charge = p.getCharge();
+                
+                
                 
                 if (id != 12 && id != -12 && 
                     id != 14 && id != -14 &&
                     id != 16 && id != -16 &&
                     id != 18 && id != -18 &&
                     id != 1000022 ){ 
-                    
-                    if(charge != 0){   
-                        if ( cos >= 0.9 || cos <= -0.9){  
-                            mult_1 = mult_1 + 1;  
-                        }     
-                        if ( cos<=0.9 || cos>=-0.9){
-                            mult_2 = mult_2 + 1;
-                        }
-                    }
-                    mult_3 = mult_3 + 1;
-                    
-                    if ( cos <= 0.9 || cos >= -0.9){
+                        PX.add(momX);
+                        PY.add(momY);
+                   // if ( cos <= 0.9 || cos >= -0.9){
                         TransMom.add(PT);
-                    }
+                   // }
                 }
-                try {
-                    //get endpoint and scale to face
-                    //double[] pos = p.getEndPoint().v();         
-                    //fill position plot
-                    //root.fill("posXY",pos[0], pos[1]);
-                    //root.fill("posz",pos[2]);
-                    if (mom != 0 && 
-                        id != 12 && id != -12 &&
-                        id != 14 && id != -14 &&
-                        id != 16 && id != -16 &&
-                        id != 18 && id != -18 &&
-                        id != 1000022 && mom != 0) { 
-                        root.fill("E_cos",cos,energy);
-                    }
-                    if (id == 22 && mom != 0){
-                        root.fill("E_cos_gamma",cos,energy);
-                        }
-                    if (id == 11 || id == -11){
-                        root.fill("E_cos_ep",cos,energy);
-                        }
-                    }
-                
-                catch (java.io.IOException e) {
-                    System.out.println(e);
-                    System.exit(1);
-                }
-                catch (java.lang.RuntimeException e){
-                    System.out.println("Found No endpoint");
-                }
-
-                System.out.println("\n");
-            
-            
-            //System.out.println("PT list "+TransMom);
+                System.out.println("\n");    
             }
         }
+
+
         double PTv2 = Math.sqrt(Sum(PX)*Sum(PX)+Sum(PY)*Sum(PY)); 
-            try{
-                root.fill("hist1", Sum(TransMom));  // |cos| > 0.9
-                root.fill("hist2", PTv2);
-                root.fill("hist3", mult_1);
-                root.fill("hist4", mult_2);
-                root.fill("hist5", mult_3);
-            }
-            catch (java.io.IOException e){
-                System.out.println(e);
-                System.exit(1);
-            }
+        try{
+            root.fill("hist1", Sum(TransMom));   
+            root.fill("hist2", PTv2); 
+        }
+        catch (java.io.IOException e){
+            System.out.println(e);
+            System.exit(1);
+        }
              
              
-            //System.out.println("FINISHED EVENT "  + eventNumber++ + "\n\n\n\n\n"); 
-        } // end process 
+        //System.out.println("FINISHED EVENT "  + eventNumber++ + "\n\n\n\n\n"); 
+    } // end process 
 
     //  sums the PT of each particle in the event
     public double Sum(List<Double> array){

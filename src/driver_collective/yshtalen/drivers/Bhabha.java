@@ -52,14 +52,14 @@ public class Bhabha extends Driver {
             root = new Jroot(jrootFile, "NEW");
             //root.init("TH1D","posz","posz", "Z Position", 18000, 0, 18000);
 
-	   root.init("TH2D", "T_hit", "Thit", "Transform: Theta of E v P, Both Hit", 10000, 0, .02, 10000, 0, 0.02);
-	   root.init("TH2D", "T_miss", "Tmiss", "Transform: Theta of E v P, Both Miss", 10000, 0, .02, 10000, 0, 0.02);
-	   root.init("TH2D", "T_hitmiss", "Thitmiss", "Transform: Theta of E v P, Hit/Miss", 10000, 0, .02, 10000, 0, 0.02);
+	   root.init("TH1D", "T_hit", "Thit", "Hit/Hit Theta Difference E-P Transformed", 10000, -0.02, .02);
+	   root.init("TH1D", "T_miss", "Tmiss", "Miss/Miss Theta Difference E-P Transformed", 10000,-0.02, 0.02);
+	   root.init("TH1D", "T_hitmiss", "Thitmiss", "Hit/Miss Theta Difference E-P Transformed", 10000, -0.02, 0.02);
 
-	   root.init("TH2D", "Tm_hit", "Tmhit", "Rotate: Theta of E v P, Both Hit", 10000, 0, .02, 10000, 0, 0.02);
+	  /* root.init("TH2D", "Tm_hit", "Tmhit", "Rotate: Theta of E v P, Both Hit", 10000, 0, .02, 10000, 0, 0.02);
 	   root.init("TH2D", "Tm_miss", "Tmmiss", "Rotate: Theta of E v P, Both Miss", 10000, 0, .02, 10000, 0, 0.02);
 	   root.init("TH2D", "Tm_hitmiss", "Tmhitmiss", "Rotate: Theta of E v P, Hit/Miss", 10000, 0, .02, 10000, 0, 0.02);
-	   
+	   */
        root.init("TH2D", "pos_emiss", "pos_emiss", "Scaled Position, HitMiss", 1000, -150, 150, 1000, -150, 150);
 	   root.init("TH2D", "pos_pmiss", "pos_pmiss", "Scaled Position, HitMiss", 1000, -150, 150, 1000, -150, 150);
 	
@@ -253,8 +253,8 @@ public class Bhabha extends Driver {
 	    //both miss
             case 0:  
 			try{
-				root.fill("Tmiss", theta_e, theta_p);
-                root.fill("Tmmiss", theta_e_mom, theta_p_mom);
+				root.fill("Tmiss", (theta_e - theta_p));
+                //root.fill("Tmmiss", theta_e_mom, theta_p_mom);
 
 				root.fill("MissXY_e", e_scx, e_scy);
 				root.fill("MissXY_p", p_scx, p_scy);
@@ -294,8 +294,8 @@ public class Bhabha extends Driver {
 				root.fill("pos_pmiss", p_scx, p_scy);
 			}
 
-			root.fill("Thitmiss", theta_e, theta_p);
-            root.fill("Tmhitmiss", theta_e_mom, theta_p_mom);
+			root.fill("Thitmiss", (theta_e - theta_p));
+            //root.fill("Tmhitmiss", theta_e_mom, theta_p_mom);
 		}
 		catch(java.io.IOException e){
 			System.out.println(e);
@@ -305,8 +305,8 @@ public class Bhabha extends Driver {
 	    //both hit
             case 2:  
 		try{
-			root.fill("Thit", theta_e, theta_p);
-            root.fill("Tmhit", theta_e_mom, theta_p_mom);
+			root.fill("Thit", (theta_e - theta_p));
+            //root.fill("Tmhit", theta_e_mom, theta_p_mom);
 			root.fill("HitXY_e", e_scx, e_scy);
 			root.fill("HitXY_p", p_scx, p_scy);
 		}

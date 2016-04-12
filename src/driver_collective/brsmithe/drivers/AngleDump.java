@@ -13,6 +13,7 @@ package scipp_ilc.drivers;
 
 import scipp_ilc.base.util.Jroot;
 import scipp_ilc.base.util.LCIOFileManager;
+import scipp_ilc.base.util.ScippUtils;
 
 import org.lcsim.event.EventHeader;
 import org.lcsim.event.MCParticle;
@@ -57,10 +58,12 @@ public class AngleDump extends Driver {
         try {
             root = new Jroot(jrootFile, "NEW");
 	
-            root.init("TH2D","posXY","posXY", "XYPosition", 300, -150, 150, 300, -150, 150);
-            root.init("TH1D","posz","posz", "Z Position", 18000, 0, 25000);
-	    root.init("TH2D", "theta", "theta", "Theta Z Position", 6200, 2800, 8200, 200, 0, 1);
-            
+            //root.init("TH2D","posXY","posXY", "XYPosition", 300, -150, 150, 300, -150, 150);
+            //root.init("TH1D","posz","posz", "Z Position", 18000, 0, 25000);
+	    root.init("TH2D", "theta", "theta", "Theta Z Position", 8200, 0, 8200, 200, 0, 3);
+	    root.init("TH2D","Angle1","Angle1","Theta vs R 3000",10000,0,10000,200,0,3);
+	    root.init("TH2D","Angle2","Angle2","Theta vs R 8000",10000,0,10000,200,0,3);
+
         }
         catch (java.io.IOException e) {
            System.out.println(e);
@@ -108,17 +111,18 @@ public class AngleDump extends Driver {
                 int id = p.getPDGID();
                
             
-                //System.out.println(type);
-                //System.out.println(name);
-                //System.out.println(id);
 
                 //get endpoint and scale to face
 	        double[] org =p.getOrigin().v();
 		double[] pos = p.getEndPoint().v();
 		double[] momentum = p.getMomentum().v();
-		//System.out.println("px: " + pos[0] + "py: " + pos[1] + "pz: " + pos[2]);
-		//System.out.println("mx: " + momentum[0] + "my: " + momentum[1] + "mz: " +momentum[2]);
-		//System.out.println("ox: " + org[0] + "oy: " + org[1] + "oz: " +org[2]);
+
+		//Get energy
+		double energy = p.getEnergy();
+		
+
+		//Applying the transform to the momentum
+		double[] transm = ScippUtils.transform(momentum,energy);
 		
 		/*
 		 *double theta;
@@ -126,34 +130,50 @@ public class AngleDump extends Driver {
 		 *double term2=(pos[0]*pos[0]+pos[1]*pos[1]);
 		 *theta = term1/term2;
 		 *anglelist.add(theta);
-		*/
+		 */
 
 		// First, finding the magnitude squared of the momentum, rsq. Then, finding its root. 
-		double rsq = momentum[0]*momentum[0] + momentum[1]*momentum[1] + momentum[2]*momentum[2];
+		double rsq = transm[0]*transm[0] + transm[1]*transm[1] + transm[2]*transm[2];
 		double arr = Math.sqrt(rsq);
 	 
-     
-		
+		//Finding the R distance to the endpoint
+		double dist = pos[0]*pos[0]+pos[1]*pos[1]+pos[2]*pos[2];
+		dist= Math.sqrt(dist);
+
 		// Calclating the transverse angle based on particle momentum.
     
-	        double angle = Math.acos(momentum[2]/arr);
+	        double angle = Math.acos(transm[2]/arr);
 		
 		
                 // Focus options
 		boolean neglect = false;
-		int lower = 2800;
-		int upper = 3150;
-		if(pos[2]>8000 && neglect==false){
-		    pos[2]=8000;
+		int lower = 0;
+		int upper = 10001;
+		
+		//Defining an upper cutoff. Values past this point are ignored. 
+		boolean docutoff = true;
+		int cutoff = 10000;
+		if(pos[2]>cutoff && !neglect && docutoff){
+		    pos[2]=cutoff;
+		    dist=cutoff;
 		}
 		
 
 		// Fill position plot
                 try {
 		    if(!(neglect && (pos[2]<2800 ||pos[2]>3100)) ){ 
-                     root.fill("posXY",pos[0], pos[1]);
-                     root.fill("posz",pos[2]);
+		     //root.fill("posXY",pos[0], pos[1]);
+                     //root.fill("posz",pos[2]);
 		     root.fill("theta",pos[2],angle);
+		     //If we are in the peak around 3000, we put it in the Angle1 Plot
+		     if((pos[2]<3100)&&(pos[2]>2900)){
+			 root.fill("Angle1",dist,angle);
+		     }
+		     // If we are in the peak of 8000 and beyond, we put it in the Angle2 Plot
+		     if(pos[2]>7900){
+			 root.fill("Angle2",dist,angle);
+		     }
+		     
 		    }
                 }
                 catch (java.io.IOException e) {

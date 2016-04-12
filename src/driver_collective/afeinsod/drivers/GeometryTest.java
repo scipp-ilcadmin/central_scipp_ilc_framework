@@ -82,8 +82,8 @@ public class GeometryTest extends Driver {
         float tileID = 0;
         
         try {
-                for( float x = -6; x < 6 ; x +=0.5 ) {
-                    for ( float y = -6 ; y < 6 ; y +=0.5 ) {
+                for( float x = -4; x < 4; x +=0.1 ) {
+                    for ( float y = -4; y < 4; y +=0.1 ) {
                         System.out.println("x="+x+", y="+y);
                         
 
@@ -100,8 +100,8 @@ public class GeometryTest extends Driver {
                     }
                 }
 
-                for( float y = -6; y < 6 ; y +=0.5 ) {
-                    for ( float x = -6 ; x < 6 ; x +=0.5 ) {
+                for( float y = -4; y < 4; y +=0.1 ) {
+                    for ( float x = -4; x <4; x +=0.1 ) {
                         System.out.println("x="+x+", y="+y);
 
                         float[] coords = new float[2];
