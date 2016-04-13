@@ -50,9 +50,6 @@ public class PQAnalysis extends Driver {
     public void startOfData() {
         eventNumber = 0;
         System.out.println("Running PQAnalysis");
-        //System.out.println("documentation = "+MCParticle.DOCUMENTATION);
-        //System.out.println("final = "+MCParticle.FINAL_STATE);
-        //System.out.println("intermediate = "+MCParticle.INTERMEDIATE);
         try {
             root = new Jroot(jrootFile, "NEW");
             root.init("TH1D","hist1", "SumPT", "Total PT of Final State Observable Particles with |cos(theta)|< 0.9",1000, 0,500);
@@ -85,16 +82,12 @@ public class PQAnalysis extends Driver {
 
 
     //PROCESS FUNCTION
-    //This is where the vast bulk of the program is run and controlled
     public void process( EventHeader event ) {
         MCParticle mcp = null;
         //System.out.println("\n\n\n\n\n\n**************NEW EVENT*******************\n\n\n");
-
         List<Double> TransMom = new ArrayList<Double>();
         List<Double> PX = new ArrayList<Double>();
         List<Double> PY = new ArrayList<Double>();   
-        //System.out.println( event.keys() );
-       
         //iterate through all FINAL_STATE particles in event
         for (MCParticle p : event.getMCParticles()) {    
             int state = p.getGeneratorStatus();
@@ -110,9 +103,6 @@ public class PQAnalysis extends Driver {
                 double PT = Math.sqrt(momX*momX+momY*momY); 
                 double energy = p.getEnergy();
                 double charge = p.getCharge();
-                
-                
-                
                 if (id != 12 && id != -12 && 
                     id != 14 && id != -14 &&
                     id != 16 && id != -16 &&
@@ -120,9 +110,7 @@ public class PQAnalysis extends Driver {
                     id != 1000022 ){ 
                         PX.add(momX);
                         PY.add(momY);
-                   // if ( cos <= 0.9 || cos >= -0.9){
                         TransMom.add(PT);
-                   // }
                 }
                 System.out.println("\n");    
             }
@@ -140,7 +128,7 @@ public class PQAnalysis extends Driver {
         }
              
              
-        //System.out.println("FINISHED EVENT "  + eventNumber++ + "\n\n\n\n\n"); 
+        System.out.println("FINISHED EVENT "  + eventNumber++ + "\n\n\n\n\n"); 
     } // end process 
 
     //  sums the PT of each particle in the event

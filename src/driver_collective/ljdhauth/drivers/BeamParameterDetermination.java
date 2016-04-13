@@ -1,4 +1,4 @@
- /*
+/*
  * BeamParameterDetermination.java
  *
  * This driver looks to measure observables
@@ -79,36 +79,23 @@ public class BeamParameterDetermination extends Driver {
             root = new Jroot(jrootFile,root_mode);
 	    /*root.init("TH2D","scatter1","posxy","X Y Hit Occupancy"
 	      +  "Over All Layers",350, -175, 175, 350, -175, 175);*/	
-	    if(layersBcal == true){
-		int layers = 15;
-		for(int i = 0; i<= layers; i++){
-		    String plotName = "heatmap" +i;
-		    String histName = "histE" +i;
-		    String plotName2 = "X Y of Layer " +i;
-		    String histName2 = "Energy Dep on Layer " +i;
-		    root.init("TH2D",plotName, plotName,plotName2, 
-			      350, -175, 175, 350, -175, 175);
-		    root.init("TH1D",histName,histName,histName2,100,0,3);
-		}
-	    }if(wholeBcal ==true){
-		// Makes a heatmap over all layers of Bcal
-		/***************/
-		String plotName = "heatmap";
-		String plotName2 = "X Y Power Drawn over ALL Layers";
-		root.init("TH2D",plotName, plotName,plotName2, 350, -175, 175, 350, -175, 175);
-		String histName = "histE_whole";
-		String histName2 = "Energy Dep, by layer";
-		root.init("TH1D",histName,histName,histName2,50,0,50);
-	    }
-	    }catch(java.io.IOException e) {
+	    // Makes a heatmap over all layers of Bcal
+	    String plotName = "hit_vectors_Mean";
+	    String plotName2 = "X Y Positions of Hits from Mean (Collapsed Bcal)";
+	    root.init("TH2D",plotName, plotName,plotName2, 350, -175, 175, 350, -175, 175);
+	    
+	    String plot2Name = "hit_vectors_Max";
+            String plot2Name2 = "X Y Positions of Hits from Max (Collapsed Bcal)";
+            root.init("TH2D",plot2Name, plot2Name,plot2Name2, 350, -175, 175, 350, -175, 175);
+	    
+	}catch(java.io.IOException e) {
             System.out.println(e);
             System.exit(1);
         }
     }
     
     // This function is called after all file runs have finished,
-    // and closes any necessary data. Prints energy deposited over
-    // all layers and the layers hit on + and - Beamcal.
+    // and clo. Prints final statements.
     public void endOfData(){
         try {
             root.end();
@@ -118,51 +105,39 @@ public class BeamParameterDetermination extends Driver {
 	    //for(Integer i: layersHit){System.out.println(i);}	    
 	}
         catch (java.io.IOException e) {
-           System.out.println(e);
-           System.exit(1);
+	    System.out.println(e);
+	    System.exit(1);
         }
     }
 
-    //******************************Power Analysis******************************************//
-    //************END OF POWER**************************************************************//
+    //******************************Beam Parameter Functions***************************//
 
 
-    //In testing
     public double maxPixelE(double currMax,double energy){
 	double newMax = currMax;
-	if(energy> currMax) newMax = energy;
+	if(energy > currMax)  newMax = energy;
 	return newMax;
     }
     
-    /*
-    public void assym_LR(double[] pos, double hitEnergy){
-	//System.out.println(sum_LR);
-	sum_LR += pos[0]*hitEnergy;//weight hit position by energy 
-	return;
-	}
-    public void assym_TD(double[] pos, double hitEnergy){
-        //System.out.println(sum_TD);
-	sum_TD += pos[1]*hitEnergy;//weight hit position by energy
-        return;
-	}
-*/
 
-    //Computes the LR assymetries based on hit coordinates
+    //LR & TD assymetries computed based on hit coordinates
     //*Need to be weighted by energy
-    
-    public void assym_LR_postTransform(double[] pos, double hitEnergy){
-        //System.out.println(sum_LR_post);
+    public void assym_Analysis(double[] pos, double hitEnergy){
+        //System.out.println(sum_LR);
         sum_LR_E += pos[0]*hitEnergy; //weight hit position by energy
 	sum_LR_Hits += pos[0];
-        return;
-    }
-
-    public void assym_TD_postTransform(double[] pos, double hitEnergy){
-        //System.out.println(sum_LR_post);
+	
+	//System.out.println(sum_TD);
         sum_TD_E += pos[1]*hitEnergy; //weight hit position by energy
 	sum_TD_Hits += pos[1];
         return;
     }
+
+    double sum_LR_E = 0;
+    double sum_TD_E = 0;
+    double sum_LR_Hits = 0;
+    double sum_TD_Hits = 0;
+
     //Compute mean shower depth (NOTE: Layers start at 1, instead of the usual 0 here)
     public void compute_meanDepth(List<SimCalorimeterHit> hits){
 	double[] eDep = new double[51];
@@ -175,80 +150,89 @@ public class BeamParameterDetermination extends Driver {
 	
 	for(SimCalorimeterHit hit: hits){	    
 	    double[] vec = hit.getPosition();
+	    double[] transformed_Vec = PolarCoords.ZtoBeamOut(vec[0],vec[1],vec[2]);
 	    if(vec[2] > 0){
-		double[] transformed_Vec = PolarCoords.ZtoBeamOut(vec[0],vec[1],vec[2]);
 		double energy = hit.getRawEnergy();
 		sumOfEnergy += energy;
-		hitnum++;
 		eDep[hit.getLayerNumber()+1] += hit.getRawEnergy();
 		hitLayerArray[hit.getLayerNumber()+1]++;
 		energyDepth_productSum += energy*transformed_Vec[2];
 		energyDepthL_productSum += energy*(hit.getLayerNumber()+1);
 		hitDepthL += hit.getLayerNumber()+1;
+		hitnum++;		
 	    }
-	    else{/*dosomethingwith negative hits?*/}
+	    else{/*working with negative hits?*/}
 	}
 	
 	hitDepthL = hitDepthL/hitnum;
 	System.out.println("E total deposited" + sumOfEnergy);
+	
+	//Layer Arrays
 	System.out.println("E deposited" + Arrays.toString(eDep));
 	System.out.println("Hits by layer" + Arrays.toString(hitLayerArray));
-	System.out.println("Hit number based:" + hitDepthL);
-	
+	System.out.println("Hit number based: " + hitDepthL);
+       
 	meanDepth_Z = energyDepth_productSum/sumOfEnergy;
 	meanDepth_Layer = energyDepthL_productSum/sumOfEnergy;
 	System.out.println("Energy based:");
-	System.out.println("Mean depth is " + meanDepth_Z);
-	System.out.println("Mean Layer is " + meanDepth_Layer);	
+	System.out.println("Mean depth, Layer is (" + meanDepth_Z + ", " + meanDepth_Layer + ")");	
     }
 
     //Compute thrust axis and value
-    public void compute_Thrust(List<SimCalorimeterHit> hits, EventHeader event){	
+    public void compute_Thrust(List<SimCalorimeterHit> hits, EventHeader event) throws java.io.IOException{	
+	
 	//Thrust quantities computed from Calorimeter hits (POSITION ONLY!)
 	EventShape es_hits = new EventShape();
 	List<BasicHep3Vector> vecs2 = new ArrayList<BasicHep3Vector>();
 	double eSum = 0;
-	for(SimCalorimeterHit hit: hits){
-	    if(hit.getPosition()[2] > 0){//keep only positive
-		BasicHep3Vector a = new BasicHep3Vector(hit.getPosition());
-		a.setV(a.x(),a.y(),0);
-		//double energy = hit.getRawEnergy();
-		//a.setV(energy*a.x(), energy*a.y(),0);
-		vecs2.add(a);	    
-		//eSum += energy;
-	    }
-	}
 	double x_avg = 0;
 	double y_avg = 0;
 	double c =0;
-	for(BasicHep3Vector hitPos_Eweight: vecs2){
-	    x_avg+= hitPos_Eweight.x();
-	    y_avg+= hitPos_Eweight.y();
-	    c++;
+	
+	for(SimCalorimeterHit hit: hits){
+	    if(hit.getPosition()[2] > 0){//keep only positive
+		BasicHep3Vector a = new BasicHep3Vector(hit.getPosition());
+		double energy = hit.getRawEnergy();
+		
+		//a.setV(a.x(),a.y(),0);
+		a.setV(energy*a.x(), energy*a.y(),0);
+		eSum += energy;
+		x_avg += a.x();
+		y_avg += a.y();
+		c++;
+		vecs2.add(a);	    
+
+	    }
 	}
-	x_avg = x_avg/c;
-	y_avg = y_avg/c;
+	//x_avg = x_avg/c;//weight by hit num
+	//y_avg = y_avg/c;
+	x_avg = x_avg/eSum;//weight by Energy
+	y_avg = y_avg/eSum;
 	System.out.println("X_avg is" + x_avg);
 	System.out.println("Y_avg is" + y_avg);
 
-	List<BasicHep3Vector> vecs = new ArrayList<BasicHep3Vector>();
+	//Now run through these again and plot from mean
+	List<BasicHep3Vector> vecs_fromMean = new ArrayList<BasicHep3Vector>();
         for(SimCalorimeterHit hit: hits){
             if(hit.getPosition()[2] > 0){//keep only positive                                                           
 		BasicHep3Vector a = new BasicHep3Vector(hit.getPosition());
+		double energy = hit.getRawEnergy();
 		
-		//a.setV(a.x(),a.y(),0);
-		//double energy =hit.getRawEnergy();
-		//eSum += energy;
 		a.setV(a.x() - x_avg, a.y() - y_avg,0);
-		vecs.add(a);
+		//root.fill("hit_vectors_Mean",a.x(),a.y());// Plot by number of hits(occup)
+		root.fill("hit_vectors_Mean",a.x(),a.y(),energy);// Weight with Energy of hit!
+		//weight by energy for thrust algorithm
+		a.setV(energy*(a.x() - x_avg), energy*(a.y() - y_avg),0);
+		vecs_fromMean.add(a);
 	    }
         }
 
-	es_hits.setEvent(vecs);
+	es_hits.setEvent(vecs_fromMean);
 	Hep3Vector thrustAxis_hits = es_hits.thrustAxis();
-	System.out.println("The thrust fromt hits is " + thrustAxis_hits.magnitude());
+	System.out.println("The thrust from hits is " + thrustAxis_hits.magnitude());
 	System.out.println("The thrustAxis from hits is " + thrustAxis_hits.toString());
 	
+	/*
 	//Thrust quantities computed from final state particles(traditional jets?)
 	EventShape es_fParticles = new EventShape();
 	List<MCParticle> final_Particles = new ArrayList<MCParticle>();
@@ -268,105 +252,92 @@ public class BeamParameterDetermination extends Driver {
 	System.out.println("The thrust from final state particles is " + thrust.magnitude());
 	//System.out.println("The number of hits in this event is " + countHits);
 	//System.out.println("The number of f_Particles in this event is " + countfinalParticles);
-    }
+	*/
+	}
     
 
     //Observables//
     public double meanDepth_Z = 0;
     public double meanDepth_Layer = 0;
-    public double sum_LR = 0;
-    public double sum_LR_post = 0;
-    public double sum_TD = 0;
-    public double sum_TD_post = 0;
+
 
     //PROCESS FUNCTION
     //This is where the vast bulk of the program is run and controlled
     public void process( EventHeader event ) {
 	//set assymetries to 0 again
-	sum_LR = 0;
-	sum_LR_post = 0;
-        sum_TD = 0;
-	sum_TD_post = 0;
+	sum_LR_E = 0;
+        sum_TD_E = 0;
+	sum_LR_Hits = 0;
+	sum_TD_Hits = 0;
 
 	super.process( event );
         List<SimCalorimeterHit> hits = event.get(SimCalorimeterHit.class, "BeamCalHits");
+
 	//initialize event variables
 	int check_layer = 0;int hit_count_limit = 100; boolean use_limit = false;
-        boolean reject_negative = false; // reject negative beamcal?
+        boolean reject_negative = true; // reject negative beamcal?
         int hit_count = 0;
-      
-	double powerDrawn = 0;
+	boolean funcs_only = false;
+
+
 	double sumOfEnergy = 0;
-	double sumOfPowerDrawn = 0;
-        double maxPixelEnergy = 0;
+	double maxPixelEnergy = 0;
 	int layerOfMaxE = 0;
 	try {	    
-	    compute_meanDepth(hits);
+	    //compute_meanDepth(hits);
 	    compute_Thrust(hits,event);
-	    
 	    // loop through the List of <SimCalHits..>
-            for (SimCalorimeterHit hit : hits) {
-                double[] vec = hit.getPosition();
-		int layer = hit.getLayerNumber();
-		if ( reject_negative && (vec[2]<0) ){ layersHit2.add(layer);} //pass over event
-                else {		    
-	            double energy = hit.getRawEnergy();
-		    assym_LR(vec, energy);
-		    assym_TD(vec, energy);
-		    double[] transformed_Vec = PolarCoords.ZtoBeamOut(vec[0],vec[1],vec[2]);
-		    assym_LR_postTransform(transformed_Vec,energy);
-		    assym_TD_postTransform(transformed_Vec,energy);
-		    
-		    //********Power lies beneath
-		    /*
-		    sumOfEnergy += energy;
-		    //REPLACE with maxPixelE(03/31/16)
-		    if(maxPixelEnergy < energy){maxPixelEnergy = energy; layerOfMaxE = layer; }
-		    */
-		    //layersHit.add(layer);
-		    //if( layer< 25) eDep[layer] += energy; 
-		    
-		    //All Layers. Set wholeBcal to true at bottom
-		    //if(wholeBcal == true){/*Select Layers*/}
-		    if(layersBcal && layer <= 15){
-			//power[layer] += powerDraw(radDosage(energy/numberOfEvents),runTemp);//Divide by Event# for avg/event.
-			root.fill("heatmap"+layer,vec[0],vec[1],powerDraw(radDosage(energy/numberOfEvents),runTemp));//mW
-			root.fill("histE"+layer,powerDraw(radDosage(energy/numberOfEvents),runTemp)); //in mW(each pixel)
+	  
+	    
+	    if(!funcs_only){
+		for (SimCalorimeterHit hit : hits) {
+		    double[] vec = hit.getPosition();
+		    double[] trformed_Vec = PolarCoords.ZtoBeamOut(vec[0],vec[1],vec[2]);
+		    int layer = hit.getLayerNumber();
+		    if ( reject_negative && (vec[2]<0) ){ layersHit2.add(layer);} //pass over event
+		    else {		    
+			double energy = hit.getRawEnergy();
+			sumOfEnergy += energy;
+			//root.fill("heatmap",vec[0],vec[1]);// default to 1 
+			
+			assym_Analysis(vec,energy);
+			hit_count++;
+			/*
+			  sumOfEnergy += energy;
+			  //REPLACE with maxPixelE(03/31/16)
+			  if(maxPixelEnergy < energy){maxPixelEnergy = energy; layerOfMaxE = layer; }
+			*/
+			//layersHit.add(layer);
+			
+			//********Power lied beneath here. See Graveyard. {4/12/16}
+			//root.fill("heatmap"+layer,vec[0],vec[1],powerDraw(radDosage(energy/numberOfEvents),runTemp));//mW
+			//root.fill("histE"+layer,powerDraw(radDosage(energy/numberOfEvents),runTemp)); //in mW(each pixel)
 			//c. 03/31/16
-			/**/
-			/*Plot radDosage
-			  root.fill("heatmap"+layer,vec[0],vec[1],radDosage(energy/numberOfEvents));//mW/cm^2
-			  root.fill("histE"+layer,radDosage(energy/numberOfEvents)); //in mW(each pixel's)*/
-			/* Plots (Energy Deposited)*#ofCrossingsPerYear*3			
-			   root.fill("heatmap"+layer,vec[0],vec[1],energy*125*Math.pow(10,9)*3);
-			   root.fill("histE"+layer,energy*125*Math.pow(10,9)*3); */
 		    }
-		    sumOfPowerDrawn += powerDrawn; 
-		    //********************
-		    sumOfEnergy += energy;
+		    //if ( use_limit && (hit_count++ > hit_count_limit) ) break;    
 		}
-                if ( use_limit && (hit_count++ > hit_count_limit) ) break;    
-            }
-	} catch(java.io.IOException e) {
+	    }	    
+	}catch(java.io.IOException e) {
             System.out.println(e);
             System.exit(1);
         }
+    
 	// Post-processing print statements:
         System.out.println("finished event "+ ++eventNumber);        
 	System.out.println("Total energy deposited across BeamCal: " + sumOfEnergy);
 	energyDepOverEvents += sumOfEnergy;
-	System.out.println("Highest energy deposited on a pixel was " + maxPixelEnergy 
+	System.out.println("Highest energy deposited on a pixel: " + maxPixelEnergy 
 			   + "on layer " + layerOfMaxE);
-	System.out.println("L_R assym number for this event, weighted by E:" + (sum_LR/sumOfEnergy));
-	System.out.println("L_R assym number for this event, weighted by E, w/ transform :" +
-			   (sum_LR_post/sumOfEnergy));
-	System.out.println("T_D assym number for this event, weighted by E:" + (sum_TD/sumOfEnergy));
-	System.out.println("T_D assym number for this event, weighted by E:" + 
-			   (sum_TD_post/sumOfEnergy));
+	System.out.println("L_R assym number for this event, weighted by E:" + (sum_LR_E/sumOfEnergy));
+	System.out.println("L_R assym number for this event, weighted by hits:" +
+			   (sum_LR_Hits/hit_count));
+	System.out.println("T_D assym number for this event, weighted by E:" + (sum_TD_E/sumOfEnergy));
+	System.out.println("T_D assym number for this event, weighted by hits:" + 
+			   (sum_TD_Hits/hit_count));
 	System.out.println("************************");
-	}//End Process
-	
-
+    }//End Process
+    
+    
     /*here all the classwide variables are declared*/
     private int numberOfEvents = 10; //This is used to get averages per event.
     private int eventNumber;
@@ -384,3 +355,20 @@ public class BeamParameterDetermination extends Driver {
     private Jroot root;
     private boolean aligned;
 }
+
+
+//The Graveyard
+
+//if( layer< 25) eDep[layer] += energy; 
+
+//All Layers. Set wholeBcal to true at bottom
+//if(wholeBcal == true){/*Select Layers*/}
+//if(layersBcal && layer <= 15){}
+//power[layer] += powerDraw(radDosage(energy/numberOfEvents),runTemp);//Divide by Event# for avg/event.
+/*Plot radDosage
+  root.fill("heatmap"+layer,vec[0],vec[1],radDosage(energy/numberOfEvents));//mW/cm^2
+  root.fill("histE"+layer,radDosage(energy/numberOfEvents)); //in mW(each pixel's)*/
+/* Plots (Energy Deposited)*#ofCrossingsPerYear*3			
+   root.fill("heatmap"+layer,vec[0],vec[1],energy*125*Math.pow(10,9)*3);
+   root.fill("histE"+layer,energy*125*Math.pow(10,9)*3); */
+    

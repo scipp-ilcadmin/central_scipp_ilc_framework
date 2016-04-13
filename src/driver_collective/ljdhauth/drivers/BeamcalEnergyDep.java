@@ -67,32 +67,30 @@ public class BeamcalEnergyDep extends Driver {
         String root_mode = "NEW";
 	try {
             root = new Jroot(jrootFile,root_mode);
-	    /*root.init("TH2D","scatter1","posxy","X Y Hit Occupancy"
-	      +  "Over All Layers",350, -175, 175, 350, -175, 175);*/	
-	    if(layersBcal == true){
-		int layers = 15;
-		for(int i = 0; i<= layers; i++){
-		    String plotName = "heatmap" +i;
-		    String histName = "histE" +i;
-		    String plotName2 = "X Y of Layer " +i;
-		    String histName2 = "Energy Dep on Layer " +i;
-		    root.init("TH2D",plotName, plotName,plotName2, 350, -175, 175, 350, -175, 175);
-		    root.init("TH1D",histName,histName,histName2,100,0,3);
-		}
-	    }if(wholeBcal ==true){
-		// Makes a heatmap over all layers of Bcal
-		/***************/
+            if(layersBcal == true){
+                int layers = 15;
+                for(int i = 0; i<= layers; i++){
+                    String plotName = "heatmap" +i;
+                    String histName = "histE" +i;
+                    String plotName2 = "X Y of Layer " +i;
+                    String histName2 = "Energy Dep on Layer " +i;
+                    root.init("TH2D",plotName, plotName,plotName2, 350, -175, 175, 350, -175, 175);
+                    root.init("TH1D",histName,histName,histName2,100,0,3);
+                }
+            }if(wholeBcal ==true){
+                // Makes a heatmap over all layers of Bcal                                                                                                                                                       
 		String plotName = "heatmap";
-		String plotName2 = "X Y Power Drawn over ALL Layers";
-		root.init("TH2D",plotName, plotName,plotName2, 350, -175, 175, 350, -175, 175);
-		String histName = "histE_whole";
-		String histName2 = "Energy Dep, by layer";
-		root.init("TH1D",histName,histName,histName2,50,0,50);
-	    }
-	    }catch(java.io.IOException e) {
+                String plotName2 = "X Y Power Drawn over ALL Layers";
+                root.init("TH2D",plotName, plotName,plotName2, 350, -175, 175, 350, -175, 175);
+                String histName = "histE_whole";
+                String histName2 = "Energy Dep, by layer";
+                root.init("TH1D",histName,histName,histName2,50,0,50);
+            }
+	}catch(java.io.IOException e) {
             System.out.println(e);
             System.exit(1);
-        }
+	}
+	
     }
     
     // This function is called after all file runs have finished,

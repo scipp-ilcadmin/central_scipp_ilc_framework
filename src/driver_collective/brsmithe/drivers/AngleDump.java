@@ -61,8 +61,9 @@ public class AngleDump extends Driver {
             //root.init("TH2D","posXY","posXY", "XYPosition", 300, -150, 150, 300, -150, 150);
             //root.init("TH1D","posz","posz", "Z Position", 18000, 0, 25000);
 	    root.init("TH2D", "theta", "theta", "Theta Z Position", 8200, 0, 8200, 200, 0, 3);
-	    root.init("TH2D","Angle1","Angle1","Theta vs R 3000",10000,0,10000,200,0,3);
-	    root.init("TH2D","Angle2","Angle2","Theta vs R 8000",10000,0,10000,200,0,3);
+	    root.init("TH2D", "thetaT","thetaT", "Theta V Z With Trans", 8200, 0, 8200, 200, 0 ,3);
+	    root.init("TH2D","angle1","angle1","Theta vs R 3000",4000,0,4000,200,0,3);
+	    root.init("TH2D","angle2","angle2","Theta vs R 8000",12000,8000,20000,200,0,3);
 
         }
         catch (java.io.IOException e) {
@@ -132,9 +133,12 @@ public class AngleDump extends Driver {
 		 *anglelist.add(theta);
 		 */
 
-		// First, finding the magnitude squared of the momentum, rsq. Then, finding its root. 
-		double rsq = transm[0]*transm[0] + transm[1]*transm[1] + transm[2]*transm[2];
+		// First, finding the magnitude squared of the momentum, rsq. Then, finding its root.
+		// T indicates it is transformed 
+		double rsq = momentum[0]*momentum[0] + momentum[1]*momentum[1] + momentum[2]*momentum[2];
 		double arr = Math.sqrt(rsq);
+		double rsqT = transm[0]*transm[0] + transm[1]*transm[1] + transm[2]*transm[2];
+		double arrT = Math.sqrt(rsqT);
 	 
 		//Finding the R distance to the endpoint
 		double dist = pos[0]*pos[0]+pos[1]*pos[1]+pos[2]*pos[2];
@@ -142,36 +146,42 @@ public class AngleDump extends Driver {
 
 		// Calclating the transverse angle based on particle momentum.
     
-	        double angle = Math.acos(transm[2]/arr);
+	        double angleT = Math.acos(transm[2]/arrT);
+		double angle = Math.acos(momentum[2]/arr);
 		
 		
                 // Focus options
 		boolean neglect = false;
 		int lower = 0;
-		int upper = 10001;
+		int upper = 10000;
 		
 		//Defining an upper cutoff. Values past this point are ignored. 
-		boolean docutoff = true;
-		int cutoff = 10000;
-		if(pos[2]>cutoff && !neglect && docutoff){
-		    pos[2]=cutoff;
-		    dist=cutoff;
+		boolean dozcutoff = true;
+		int zcutoff = 8000;
+		if(pos[2]>zcutoff && !neglect && dozcutoff){
+		    pos[2]=zcutoff;
+		}
+		boolean dorcutoff = true;
+		int rcutoff = 19999;
+		if(dist>rcutoff && !neglect && dorcutoff){
+		    dist=rcutoff;
 		}
 		
 
 		// Fill position plot
                 try {
-		    if(!(neglect && (pos[2]<2800 ||pos[2]>3100)) ){ 
+		    if(!(neglect && (pos[2]<2800 ||pos[2]>3600)) ){ 
 		     //root.fill("posXY",pos[0], pos[1]);
                      //root.fill("posz",pos[2]);
 		     root.fill("theta",pos[2],angle);
+		     root.fill("thetaT",pos[2],angleT);
 		     //If we are in the peak around 3000, we put it in the Angle1 Plot
 		     if((pos[2]<3100)&&(pos[2]>2900)){
-			 root.fill("Angle1",dist,angle);
+			 root.fill("angle1",dist,angle);
 		     }
 		     // If we are in the peak of 8000 and beyond, we put it in the Angle2 Plot
 		     if(pos[2]>7900){
-			 root.fill("Angle2",dist,angle);
+			 root.fill("angle2",dist,angle);
 		     }
 		     
 		    }

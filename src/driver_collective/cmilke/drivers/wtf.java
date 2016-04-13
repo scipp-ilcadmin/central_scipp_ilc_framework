@@ -99,10 +99,6 @@ public class wtf extends Driver {
         for (SimCalorimeterHit hit : hits) {
             double[] vec = hit.getPosition();
             double radius = Math.hypot(vec[0],vec[1]);
-            if (radius > 200) {
-                System.out.println("out_of_bounds " + radius);
-                break;
-            }
         }
         
 
