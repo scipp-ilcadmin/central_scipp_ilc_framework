@@ -104,7 +104,7 @@ public class MomentumTransferAnalysis extends Driver {
             double[] pv = {x, y, z};
             En = p.getEnergy();
             pv = ScippUtils.transform( pv, En ); 
-            //x = pv[0]; y = pv[1]; z = pv[2];
+            x = pv[0]; y = pv[1]; z = pv[2];
             mag = Math.sqrt( x*x + y*y + z*z );             
 
             //int par0 = event.getJMOHEP(p, 0);
