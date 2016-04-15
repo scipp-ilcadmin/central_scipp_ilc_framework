@@ -180,15 +180,49 @@ public class BeamParameterDetermination extends Driver {
 
     //Compute thrust axis and value
     public void compute_Thrust(List<SimCalorimeterHit> hits, EventHeader event) throws java.io.IOException{	
-	
+	//******Test CASES*******//
+	EventShape fake_hits = new EventShape();
+	double pi = Math.PI;
+	List<BasicHep3Vector> tests = new ArrayList<BasicHep3Vector>();
+	for(int n = 0; n<= 11; n++){
+	    double theta = (2*pi*n)/12;
+	    double[] fakehit = {Math.cos(theta),Math.sin(theta),0};
+	    BasicHep3Vector fakeHepVector = new BasicHep3Vector(fakehit);
+	    tests.add(fakeHepVector);
+	}
+	fake_hits.setEvent(tests);
+	BasicHep3Vector hopefulthrust = fake_hits.thrust();
+        Hep3Vector thrustAxis_fakehits = fake_hits.thrustAxis();
+        System.out.println("Test case 1: ");
+        System.out.println("The thrust from fakehits is " + thrustAxis_fakehits.magnitude());
+	System.out.println("The thrust(different method?) from fakehits is " + hopefulthrust.toString());
+        System.out.println("The thrustAxis from fakehits is " + thrustAxis_fakehits.toString());
+
+	EventShape fake_hits2 = new EventShape();
+     
+        List<BasicHep3Vector> tests2 = new ArrayList<BasicHep3Vector>();
+        for(int n = 0; n<= 10; n++){
+            //double theta = (2*pi*n)/12;
+            double[] fakehit2 = {-1,2,0};
+            BasicHep3Vector fakeHepVector2 = new BasicHep3Vector(fakehit2);
+            tests2.add(fakeHepVector2);
+        }
+        fake_hits2.setEvent(tests2);
+	BasicHep3Vector hopefulthrust2 = fake_hits2.thrust();
+        Hep3Vector thrustAxis_fakehits2 = fake_hits2.thrustAxis();
+        System.out.println("Test case 2: ");
+        System.out.println("The thrust from fakehits2 is " + thrustAxis_fakehits2.magnitude());
+	System.out.println("The thrust(different method?) from fakehits2 is " + hopefulthrust2.toString());
+        System.out.println("The thrustAxis from fakehits2 is " + thrustAxis_fakehits2.toString());
+	//*****END TEST CASES****// 
+
 	//Thrust quantities computed from Calorimeter hits (POSITION ONLY!)
 	EventShape es_hits = new EventShape();
 	List<BasicHep3Vector> vecs2 = new ArrayList<BasicHep3Vector>();
 	double eSum = 0;
 	double x_avg = 0;
 	double y_avg = 0;
-	double c =0;
-	
+	double c =0;	
 	for(SimCalorimeterHit hit: hits){
 	    if(hit.getPosition()[2] > 0){//keep only positive
 		BasicHep3Vector a = new BasicHep3Vector(hit.getPosition());
@@ -229,7 +263,9 @@ public class BeamParameterDetermination extends Driver {
 
 	es_hits.setEvent(vecs_fromMean);
 	Hep3Vector thrustAxis_hits = es_hits.thrustAxis();
+	BasicHep3Vector hopefulthrust_Ebased = es_hits.thrust();
 	System.out.println("The thrust from hits is " + thrustAxis_hits.magnitude());
+	System.out.println("The thrust(different method?) from hits(E-weighted) is " + hopefulthrust_Ebased.toString());
 	System.out.println("The thrustAxis from hits is " + thrustAxis_hits.toString());
 	
 	/*
