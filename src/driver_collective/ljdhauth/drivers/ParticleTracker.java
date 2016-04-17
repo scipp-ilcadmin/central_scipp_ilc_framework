@@ -30,8 +30,7 @@ public class ParticleTracker extends Driver {
         XML FUNCTION FORMAT
 
     public void //setVariablename(variable type) { //the first letter after "set" must be uppercase
-                                                  //but can (must?) be lowercase in xml file
-        set variable here; 
+                                                  //but can (must?) be lowercase in xml fil        set variable here; 
     }
     *******************************************************************************************/
 
@@ -59,9 +58,9 @@ public class ParticleTracker extends Driver {
         try {
             root = new Jroot(jrootFile,root_mode);
             
-            root.init("TH1D","hist1","posz","z position",2000,2000,4000);
-            root.init("TH2D","scatter1","posxy","X Y Hit Occupancy Over All Layers", 350, -175, 175, 350, -175, 175);        
-            root.init("TH2D","heatmapAll","heatAll","X Y Energy over All Layers", 350, -175, 175, 350, -175, 175);
+            root.init("TH1D","hist1","posz","z position",400,0,4000);
+            //root.init("TH2D","scatter1","posxy","X Y Hit Occupancy Over All Layers", 350, -175, 175, 350, -175, 175);        
+	    // root.init("TH2D","heatmapAll","heatAll","X Y Energy over All Layers", 350, -175, 175, 350, -175, 175);
             
         } catch(java.io.IOException e) {
             System.out.println(e);
@@ -86,32 +85,26 @@ public class ParticleTracker extends Driver {
     //This is where the vast bulk of the program is run and controlled
     public void process( EventHeader event ) {
         super.process( event );
-        List<SimCalorimeterHit> hits = event.get(SimCalorimeterHit.class, "BeamCalHits");
-        
+        //List<SimCalorimeterHit> hits = event.get(SimCalorimeterHit.class, "BeamCalHits");
+        List<MCParticle> particles = event.getMCParticles();
         int check_layer = 0;
         int hit_count_limit = 100;
         boolean use_limit = false;
         boolean reject_negative = true;
-        
+        int p_count = 0;
+	int p_final_count =0;
         int hit_count = 0;
         
         try {
-            for (SimCalorimeterHit hit : hits) {
-                double[] vec = hit.getPosition();
-                if (aligned) vec = PolarCoords.ZtoBeamOut(vec[0],vec[1],vec[2]);
-                int layer = hit.getLayerNumber();
-                
-                if ( reject_negative && (vec[2]<0) ); //pass over event
-                else {
-                    root.fill("hist1",vec[2]);
-                    root.fill("scatter1",vec[0],vec[1]);            
-                    
-                    double energy = hit.getCorrectedEnergy();
-                    root.fill("heatmapAll",vec[0],vec[1],energy); 
-                }
-                
-                if ( use_limit && (hit_count++ > hit_count_limit) ) break;    
-            }
+	    for(MCParticle p: particles){
+		p_count++;
+		if(p.getGeneratorStatus() == MCParticle.FINAL_STATE){
+		    p_final_count++;
+		    root.fill("hist1", p.getEndPoint());
+		}
+	    }
+
+	    
         
         } catch(java.io.IOException e) {
             System.out.println(e);

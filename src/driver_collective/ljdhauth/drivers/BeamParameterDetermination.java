@@ -87,7 +87,7 @@ public class BeamParameterDetermination extends Driver {
 	    String plot2Name = "hit_vectors_Max";
             String plot2Name2 = "X Y Positions of Hits from Max (Collapsed Bcal)";
             root.init("TH2D",plot2Name, plot2Name,plot2Name2, 350, -175, 175, 350, -175, 175);
-	    
+	  
 	}catch(java.io.IOException e) {
             System.out.println(e);
             System.exit(1);
@@ -180,6 +180,7 @@ public class BeamParameterDetermination extends Driver {
 
     //Compute thrust axis and value
     public void compute_Thrust(List<SimCalorimeterHit> hits, EventHeader event) throws java.io.IOException{	
+
 	//******Test CASES*******//
 	EventShape fake_hits = new EventShape();
 	double pi = Math.PI;
@@ -197,6 +198,7 @@ public class BeamParameterDetermination extends Driver {
         System.out.println("The thrust from fakehits is " + thrustAxis_fakehits.magnitude());
 	System.out.println("The thrust(different method?) from fakehits is " + hopefulthrust.toString());
         System.out.println("The thrustAxis from fakehits is " + thrustAxis_fakehits.toString());
+
 
 	EventShape fake_hits2 = new EventShape();
      
@@ -227,16 +229,14 @@ public class BeamParameterDetermination extends Driver {
 	    if(hit.getPosition()[2] > 0){//keep only positive
 		BasicHep3Vector a = new BasicHep3Vector(hit.getPosition());
 		double energy = hit.getRawEnergy();
-		
-		//a.setV(a.x(),a.y(),0);
 		a.setV(energy*a.x(), energy*a.y(),0);
 		eSum += energy;
 		x_avg += a.x();
 		y_avg += a.y();
 		c++;
 		vecs2.add(a);	    
-
 	    }
+	    
 	}
 	//x_avg = x_avg/c;//weight by hit num
 	//y_avg = y_avg/c;
@@ -305,10 +305,10 @@ public class BeamParameterDetermination extends Driver {
         sum_TD_E = 0;
 	sum_LR_Hits = 0;
 	sum_TD_Hits = 0;
-
 	super.process( event );
         List<SimCalorimeterHit> hits = event.get(SimCalorimeterHit.class, "BeamCalHits");
 
+	System.out.println("************************");
 	//initialize event variables
 	int check_layer = 0;int hit_count_limit = 100; boolean use_limit = false;
         boolean reject_negative = true; // reject negative beamcal?
