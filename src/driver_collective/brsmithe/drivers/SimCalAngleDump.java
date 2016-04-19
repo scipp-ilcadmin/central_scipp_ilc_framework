@@ -113,11 +113,15 @@ public class SimCalAngleDump extends Driver {
             	     //get endpoint and scale to face
 		    double[] pos = p.getEndPoint().v();
 
+		    boolean ignoremisses = true;
 
 		    //fill position plot
 		    try {
-			root.fill("posXY",pos[0], pos[1]);
-			root.fill("posz",pos[2]);
+			// If the particle missed and we are ignoring them, returns false 
+			if(!((pos[2]>3600 || pos[2]<2800) && ignoremisses) ){ 
+			    root.fill("posXY",pos[0], pos[1]);
+			    root.fill("posz",pos[2]);
+			}
 		    }
 		    catch (java.io.IOException e) {
 			System.out.println(e);

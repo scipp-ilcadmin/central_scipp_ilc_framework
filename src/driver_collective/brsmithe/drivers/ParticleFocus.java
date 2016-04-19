@@ -115,7 +115,7 @@ public class ParticleFocus extends Driver {
 
                 //fill position plot
                 try {
-		    if(pos[2]>2900 && pos[2]<3400){
+		    if(pos[2]>2900 && pos[2]<3600){
 			root.fill("posXY",pos[0], pos[1]);
 			root.fill("posz",pos[2]);
 		    }
