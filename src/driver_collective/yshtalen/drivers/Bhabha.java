@@ -52,12 +52,16 @@ public class Bhabha extends Driver {
             root = new Jroot(jrootFile, "NEW");
             //root.init("TH1D","posz","posz", "Z Position", 18000, 0, 18000);
             
+
+           //PLOTS 
+           //naming convention: content_hitType_axes
+           
            //theta difference plots
-           root.init("TH1D", "ThitDiff", "ThitDiff", "Hit/Hit Theta Difference E-P Transformed", 10000, -0.1, 0.1);
-           root.init("TH2D", "Thit", "Thit", "Hit/Hit Theta E v P Transformed", 10000, 0.0, 0.02, 10000, 0.0, 0.02);
+           root.init("TH1D", "T_hitDiff", "ThitDiff", "Hit/Hit Theta Difference E-P Transformed", 10000, -0.1, 0.1);
+           root.init("TH2D", "T_2hit_PvE", "T_2hit_PvE", "Hit/Hit Theta P v E Transformed", 10000, 0.0, 0.02, 10000, 0.0, 0.02);
            //root.init("TH1D", "Thitmiss", "Thitmiss", "Hit/Miss Theta Difference E-P Transformed", 10000, -0.02, 0.02);
-           root.init("TH2D", "Thit_cut", "Thit_cut", "Hit/Miss Theta P v E after cut", 10000, 0.0, 0.02, 10000, 0.0, 0.02);
-           root.init("TH2D", "Thitmiss", "Thitmiss", "Hit/Miss Theta P v E after cut", 10000, 0.0, 0.2, 10000, 0.0, 0.2);
+           root.init("TH2D", "T_2hit_cut_PvE", "T_2hit_cut_PvE", "Hit/Hit Theta P v E after cut", 10000, 0.0, 0.02, 10000, 0.0, 0.02);
+           root.init("TH2D", "T_hitmiss_PvE", "T_hit_PvE", "Hit/Miss Theta P v E after cut", 10000, 0.0, 0.2, 10000, 0.0, 0.2);
 
         
            //position plots, unscaled and scaled to face
@@ -68,15 +72,19 @@ public class Bhabha extends Driver {
            root.init("TH2D", "MissXY_e", "MissXY_e", "Scaled Position, Miss", 1000, -150, 150, 1000, -150, 150);
            root.init("TH2D", "MissXY_p", "MissXY_p", "Scaled Position, Miss", 1000, -150, 150, 1000, -150, 150);
            
-           //energy distributions
 
-           root.init("TH2D", "EvT_e2hit", "EvT_e2hit", "Energy v Theta of Hit/Hit Electrons", 10000, 0, 0.02, 10000, 0, 260);
-           root.init("TH2D", "EvT_p2hit", "EvT_p2hit", "Energy v Theta of Hit/Hit Positrons", 10000, 0, 0.02, 10000, 0, 260);
-           root.init("TH2D", "EvT_ehit", "EvT_ehit", "Energy v Theta of Hit/Miss Electrons", 10000, 0, 0.02, 10000, 0, 260);
-           root.init("TH2D", "EvT_phit", "EvT_phit", "Energy v Theta of Hit/Miss Positrons", 10000, 0, 0.02, 10000, 0, 260);
-           root.init("TH1D", "Energy_e", "Energy_e", "Energy Distribution of Hit/Miss Electrons", 10000, 0, 260);
-           root.init("TH1D", "Energy_p", "Energy_p", "Energy Distribution of Hit/Miss Electrons", 10000, 0, 260);
-           root.init("TH2D", "ThitPvE", "ThitPvE", "Hit/Hit Energy P v E after cut", 10000, 0.0, 260, 10000, 0.0, 260);
+           //energy distributions
+           root.init("TH2D", "EvT_2hit_E", "EvT_2hit_E", "Energy v Theta of Hit/Hit Electrons", 10000, 0, 0.02, 10000, 0, 260);
+           root.init("TH2D", "EvT_2hit_P", "EvT_2hit_P", "Energy v Theta of Hit/Hit Positrons", 10000, 0, 0.02, 10000, 0, 260);
+           root.init("TH2D", "EvT_2hit_cut_E", "EvT_2hit_cut_E", "Energy v Theta of Hit/Hit Electrons", 10000, 0, 0.02, 10000, 0, 260);
+           root.init("TH2D", "EvT_2hit_cut_P", "EvT_2hit_cut_P", "Energy v Theta of Hit/Hit Positrons", 10000, 0, 0.02, 10000, 0, 260);
+
+           root.init("TH2D", "E_2hit_PvE", "E_2hit_PvE", "Energy Hit/Hit P v E", 10000, 0.0, 260, 10000, 0.0, 260);
+           root.init("TH2D", "E_2hit_cut_PvE", "E_2hit_cut_PvE", "Energy Hit/Hit P v E after cut", 10000, 0.0, 260, 10000, 0.0, 260);
+           root.init("TH2D", "E_hitmiss_PvE", "E_hit_PvE", "Energy Hit/Miss P v E ", 10000, 0.0, 260, 10000, 0.0, 260);
+           root.init("TH2D", "EvT_hit_E", "EvT_hit_E", "Energy v Theta of Hit/Miss Electrons", 10000, 0, 0.02, 10000, 0, 260);
+           root.init("TH2D", "EvT_hit_P", "EvT_hit_P", "Energy v Theta of Hit/Miss Positrons", 10000, 0, 0.02, 10000, 0, 260);
+
         }
         catch (java.io.IOException e) {
            System.out.println(e);
@@ -279,12 +287,11 @@ public class Bhabha extends Driver {
                     //fill energy distribution plots for hit/miss electrons and positrons	
                     double tDiff = (theta_e-theta_p);
                     if(Math.abs(tDiff)<cut){
-                        root.fill("Thitmiss", theta_e, theta_p);
-                        root.fill("Energy_e", T_e[3]);
-                        root.fill("Energy_p", T_p[3]);
+                        root.fill("T_hit_PvE", theta_e, theta_p);
+                        root.fill("E_hit_PvE", e_e, p_p);
                     }
-                    root.fill("EvT_ehit", theta_e, e_e);
-                    root.fill("EvT_phit", theta_p, p_p);
+                    root.fill("EvT_hit_E", theta_e, e_e);
+                    root.fill("EvT_hit_P", theta_p, p_p);
 
                     //fill scaled-to-face hit/miss position plots
                     if(pos_e[2]>12000){
@@ -294,9 +301,7 @@ public class Bhabha extends Driver {
                         root.fill("pos_pmiss", p_scx, p_scy);
                     }
 
-                    //make a cut on the angle difference between e and p and plot remaining points
-                    //these are final state e/p that are no back-to-back
-                    //angle chosen: 0.005 rad
+
                 }
                 catch(java.io.IOException e){
                     System.out.println(e);
@@ -306,18 +311,31 @@ public class Bhabha extends Driver {
             //both hit
                 case 2:  
                 try{
+
+                    root.fill("T_2hit_PvE", theta_e, theta_p);
+                    //theta positron v electron
+                    root.fill("E_2hit_PvE", e_e, p_p);
+                   
+                    //energy v theta electrons and positrons separately
+                    root.fill("EvT_2hit_E", theta_e, e_e);
+                    root.fill("EvT_2hit_P", theta_p, p_p);
+
+                    //make a cut on the angle difference between e and p and plot remaining points
+                    //these are final state e/p that are no back-to-back
+                    //angle chosen: 0.005 rad
                     double tDiff = (theta_e - theta_p);
-                    root.fill("ThitDiff", tDiff);
-                    root.fill("Thit", theta_e, theta_p);
-                    root.fill("ThitPvE", e_e, p_p);
+                    root.fill("T_hitDiff", tDiff);
                     
-                    root.fill("EvT_e2hit", theta_e, e_e);
-                    root.fill("EvT_p2hit", theta_p, p_p);
-
-
                     if(Math.abs(tDiff)<cut){
+                        //add to cut count for fraction events counts
                         hithitcount++;
-                        root.fill("Thit_cut", theta_e, theta_p);
+                        //fill cut theta + energy plots
+                        root.fill("T_2hit_cut_PvE", theta_e, theta_p);
+                        root.fill("E_2hit_cut_PvE", e_e, p_p);
+
+                        root.fill("EvT_2hit_cut_E", theta_e, e_e);
+                        root.fill("EvT_2hit_cut_P", theta_p, p_p);
+                        //fill scaled position of these electrons and positrons
                         root.fill("HitXY_e", e_scx, e_scy);
                         root.fill("HitXY_p", p_scx, p_scy);
                     }

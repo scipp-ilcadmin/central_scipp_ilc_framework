@@ -77,9 +77,12 @@ public class StdhepQ extends Driver {
          root = new Jroot(jrootFile,root_mode);
 
          // Resultant Momentum (Pr) vs. Momentum Transfer ( sqrt(Q^2) )
-         root.init("TH2D","prVQsquare","prVQsquare","P#{_r} (y) vs. #sqrt{Q#{^2} } (x)", 200, 0, 3, 200, 0, 5 );
+         root.init("TH2D","prVQ","prVQ","P#_{r} (y) vs. #sqrt{Q#^{2} } (x)", 200, 0, 3, 200, 0, 5 );
+         root.init("TH2D","prVeQ","prVeQ","P#_{r} (y) vs. #sqrt{Q#^{2} } (x)", 200, 0, 3, 200, 0, 5 );
+         root.init("TH2D","prVpQ","prVpQ","P#_{r} (y) vs. #sqrt{Q#^{2} } (x)", 200, 0, 3, 200, 0, 5 );
+
          // Ocurrences of #P_r
-         root.init("TH1D","timesVpr","timesVpr","Occurences of #P_r of Resultant Particles", 200, 0, 1.8 );
+         //root.init("TH1D","timesVpr","timesVpr","Occurences of #P_r of Resultant Particles", 200, 0, 1.8 );
 
          //file process loop
          int total = 0;
@@ -107,12 +110,13 @@ public class StdhepQ extends Driver {
 
    public void analyze(StdhepEvent event){
       int n = event.getNHEP();
-      double Q = 0;
+      // Values of Momentum Transfer for e- (Q) and e+ (R)
+      double Q = 0; double R = 0;
       // Array to hold perpindicular momenta
       double x_tot = 0; double y_tot = 0;
       try{
-         System.out.println("\n=======================================\n");
-         System.out.println("\n"+n+" particle event\n");
+         //System.out.println("\n=======================================\n");
+         //System.out.println("\n"+n+" particle event\n");
          for ( int p = 0; p<n; p++) {
             int ID = event.getIDHEP( p );                           
             boolean fin_st = ( event.getISTHEP( p ) == FINAL_STATE);
@@ -149,19 +153,10 @@ public class StdhepQ extends Driver {
             boolean neutrino = (ID==12 || ID==14 || ID==16 || ID==18 );
             if( !neutrino && fin_st ){
                // Want max of Positron and Electron Q
-               if( (ID==11||ID==-11) && En>100.0 ){
-                  
-               //System.out.println ( "Parents: "+par0+", "+par1 );
-               //System.out.println ( "Self: "+p);
-               //System.out.println("ID: "+ID);
-               //System.out.println("State: "+event.getISTHEP(p) );
-               //System.out.printf("P: (%.3f, %.3f, %.3f) \n", x, y, z);
-               //System.out.println("Pmag: "+mag);
-               //System.out.printf("r: (%.3f, %.3f, %.3f) \n", u, v, w);
-               //System.out.println("E: "+En+"\n");
-                  double R = getQ( x, y, z, En);
-                  if ( R>Q ) Q = R;
-               }
+               if( ID==11 && En>100.0 )
+                  Q = getQ( x, y, z, En);
+               if( ID==-11 && En>100.0 )
+                  R = getQ( x, y, z, En);
                // Vector summmation of all resultant particle perp momentum
                else {
                   x_tot+=x; y_tot+=y;
@@ -169,8 +164,12 @@ public class StdhepQ extends Driver {
             }
          }
          double mag_pr = Math.sqrt( x_tot*x_tot + y_tot*y_tot );
-         root.fill("timesVpr", mag_pr );
-         root.fill("prVQsquare", Q, mag_pr);
+         //root.fill("timesVpr", mag_pr );
+         double M = Q;
+         if (R>Q) M = R;
+         root.fill("prVQ", M, mag_pr);
+         root.fill("prVeQ", Q, mag_pr);
+         root.fill("prVpQ", R, mag_pr);
       } catch(java.io.IOException e) {
          System.out.println(e);
          System.exit(1);
