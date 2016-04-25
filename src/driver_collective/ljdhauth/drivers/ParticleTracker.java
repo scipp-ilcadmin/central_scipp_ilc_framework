@@ -100,7 +100,7 @@ public class ParticleTracker extends Driver {
 		p_count++;
 		if(p.getGeneratorStatus() == MCParticle.FINAL_STATE){
 		    p_final_count++;
-		    root.fill("hist1", p.getEndPoint());
+		    root.fill("hist1", 5);//second argument is bull
 		}
 	    }
 

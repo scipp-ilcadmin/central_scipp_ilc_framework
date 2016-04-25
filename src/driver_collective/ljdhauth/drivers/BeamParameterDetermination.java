@@ -103,6 +103,14 @@ public class BeamParameterDetermination extends Driver {
 			       energyDepOverEvents +" GeV");
 	    System.out.println("Average per event = " +energyDepOverEvents/numberOfEvents);
 	    //for(Integer i: layersHit){System.out.println(i);}	    
+	    System.out.println("Array of LR assyms for positive BeamCal:" + LR_assym_pos.toString());
+	    System.out.println("Array of TD assyms for positive BeamCal:" + TD_assym_pos.toString());
+	    System.out.println("Array of LR assyms for negative BeamCal:" + LR_assym_neg.toString());
+	    System.out.println("Array of TD assyms for negative BeamCal:" + TD_assym_neg.toString());
+	    
+	    System.out.println("Array of thrust values for positive BeamCal:" + thrust_pos.toString());
+	    System.out.println("Array of thrust values for negative BeamCal:" + thrust_neg.toString());
+	    
 	}
         catch (java.io.IOException e) {
 	    System.out.println(e);
@@ -182,6 +190,7 @@ public class BeamParameterDetermination extends Driver {
     public void compute_Thrust(List<SimCalorimeterHit> hits, EventHeader event) throws java.io.IOException{	
 
 	//******Test CASES*******//
+	/*
 	EventShape fake_hits = new EventShape();
 	double pi = Math.PI;
 	List<BasicHep3Vector> tests = new ArrayList<BasicHep3Vector>();
@@ -200,8 +209,7 @@ public class BeamParameterDetermination extends Driver {
         System.out.println("The thrustAxis from fakehits is " + thrustAxis_fakehits.toString());
 
 
-	EventShape fake_hits2 = new EventShape();
-     
+	EventShape fake_hits2 = new EventShape();     
         List<BasicHep3Vector> tests2 = new ArrayList<BasicHep3Vector>();
         for(int n = 0; n<= 10; n++){
             //double theta = (2*pi*n)/12;
@@ -216,57 +224,104 @@ public class BeamParameterDetermination extends Driver {
         System.out.println("The thrust from fakehits2 is " + thrustAxis_fakehits2.magnitude());
 	System.out.println("The thrust(different method?) from fakehits2 is " + hopefulthrust2.toString());
         System.out.println("The thrustAxis from fakehits2 is " + thrustAxis_fakehits2.toString());
+	*/
 	//*****END TEST CASES****// 
 
-	//Thrust quantities computed from Calorimeter hits (POSITION ONLY!)
-	EventShape es_hits = new EventShape();
-	List<BasicHep3Vector> vecs2 = new ArrayList<BasicHep3Vector>();
-	double eSum = 0;
-	double x_avg = 0;
-	double y_avg = 0;
-	double c =0;	
+	//Thrust quantities computed from Calorimeter hits (energy-weighted)
+	EventShape es_hits_pos = new EventShape();
+	EventShape es_hits_neg = new EventShape();
+	
+	List<BasicHep3Vector> vecs_pos = new ArrayList<BasicHep3Vector>();
+	List<BasicHep3Vector> vecs_neg = new ArrayList<BasicHep3Vector>();
+	double eSum_pos = 0;
+	double eSum_neg = 0;
+	
+	double x_avg_pos = 0;
+	double y_avg_pos = 0;
+	double x_avg_neg = 0;
+	double y_avg_neg = 0;
+	double c_pos =0;	
+	double c_neg = 0;
 	for(SimCalorimeterHit hit: hits){
+	    BasicHep3Vector a = new BasicHep3Vector(hit.getPosition());
+	    double energy = hit.getRawEnergy();
+	    a.setV(energy*a.x(), energy*a.y(),0);
 	    if(hit.getPosition()[2] > 0){//keep only positive
-		BasicHep3Vector a = new BasicHep3Vector(hit.getPosition());
-		double energy = hit.getRawEnergy();
-		a.setV(energy*a.x(), energy*a.y(),0);
-		eSum += energy;
-		x_avg += a.x();
-		y_avg += a.y();
-		c++;
-		vecs2.add(a);	    
+		eSum_pos += energy;
+		x_avg_pos += a.x();
+		y_avg_pos += a.y();
+		vecs_pos.add(a);	    
 	    }
-	    
+	    else{
+		eSum_neg += energy;
+		x_avg_neg += a.x();
+		y_avg_neg += a.y();
+		vecs_neg.add(a);
+	    }
 	}
 	//x_avg = x_avg/c;//weight by hit num
 	//y_avg = y_avg/c;
-	x_avg = x_avg/eSum;//weight by Energy
-	y_avg = y_avg/eSum;
-	System.out.println("X_avg is" + x_avg);
-	System.out.println("Y_avg is" + y_avg);
+	
+	x_avg_pos = x_avg_pos/eSum_pos;//weight by Energy
+	y_avg_pos = y_avg_pos/eSum_pos;
+
+	x_avg_neg = x_avg_neg/eSum_neg;
+	y_avg_neg = y_avg_neg/eSum_neg;
+
+	LR_assym_pos.add(x_avg_pos);
+	TD_assym_pos.add(y_avg_pos);
+	LR_assym_neg.add(x_avg_neg);
+	TD_assym_neg.add(y_avg_neg);
+	System.out.println("X_avg for positive BeamCal is" + x_avg_pos);
+	System.out.println("Y_avg for positive BeamCal is" + y_avg_pos);
+	System.out.println("X_avg for negative BeamCal is" + x_avg_neg);
+	System.out.println("Y_avg for negative BeamCal is" + y_avg_neg);
 
 	//Now run through these again and plot from mean
-	List<BasicHep3Vector> vecs_fromMean = new ArrayList<BasicHep3Vector>();
+	List<BasicHep3Vector> vecs_fromMean_pos = new ArrayList<BasicHep3Vector>();
+	List<BasicHep3Vector> vecs_fromMean_neg = new ArrayList<BasicHep3Vector>();
+		
         for(SimCalorimeterHit hit: hits){
             if(hit.getPosition()[2] > 0){//keep only positive                                                           
 		BasicHep3Vector a = new BasicHep3Vector(hit.getPosition());
-		double energy = hit.getRawEnergy();
-		
-		a.setV(a.x() - x_avg, a.y() - y_avg,0);
+		double energy = hit.getRawEnergy();		
+		//a.setV(a.x() - x_avg_pos, a.y() - y_avg_pos,0);
 		//root.fill("hit_vectors_Mean",a.x(),a.y());// Plot by number of hits(occup)
 		root.fill("hit_vectors_Mean",a.x(),a.y(),energy);// Weight with Energy of hit!
-		//weight by energy for thrust algorithm
-		a.setV(energy*(a.x() - x_avg), energy*(a.y() - y_avg),0);
-		vecs_fromMean.add(a);
+		//weight by energy for thrust algor,ithm
+		a.setV(energy*(a.x() - x_avg_pos), energy*(a.y() - y_avg_pos),0);
+		vecs_fromMean_pos.add(a);
+	    }
+	    else{
+		//For negative?
+		BasicHep3Vector a = new BasicHep3Vector(hit.getPosition());
+                double energy = hit.getRawEnergy();
+                //a.setV(a.x() - x_avg_neg, a.y() - y_avg_neg,0);
+                //root.fill("hit_vectors_Mean",a.x(),a.y());// Plot by number of hits(occup) 
+                //root.fill("hit_vectors_Mean",a.x(),a.y(),energy);// Weight with Energy of hit!
+		//weight by energy for thrust algor,ithm                                                                                                                          
+                a.setV(energy*(a.x() - x_avg_neg), energy*(a.y() - y_avg_neg),0);
+                vecs_fromMean_neg.add(a);
 	    }
         }
-
-	es_hits.setEvent(vecs_fromMean);
-	Hep3Vector thrustAxis_hits = es_hits.thrustAxis();
-	BasicHep3Vector hopefulthrust_Ebased = es_hits.thrust();
-	System.out.println("The thrust from hits is " + thrustAxis_hits.magnitude());
-	System.out.println("The thrust(different method?) from hits(E-weighted) is " + hopefulthrust_Ebased.toString());
-	System.out.println("The thrustAxis from hits is " + thrustAxis_hits.toString());
+	
+	es_hits_pos.setEvent(vecs_fromMean_pos);
+	es_hits_neg.setEvent(vecs_fromMean_neg);
+	
+	Hep3Vector thrustAxis_hits_p = es_hits_pos.thrustAxis();
+	BasicHep3Vector hopefulthrust_Ebased_p = es_hits_pos.thrust();
+	thrust_pos.add(hopefulthrust_Ebased_p.x());
+	System.out.println("For the positive BeamCal");
+	System.out.println("The thrust from hits is " + thrustAxis_hits_p.magnitude());
+	System.out.println("The thrust(diff-corr method) from hits(E-weighted) is " + hopefulthrust_Ebased_p.toString());
+	System.out.println("The thrustAxis from hits is " + thrustAxis_hits_p.toString());
+	Hep3Vector thrustAxis_hits_n = es_hits_neg.thrustAxis();
+        BasicHep3Vector hopefulthrust_Ebased_n = es_hits_neg.thrust();
+	thrust_neg.add(hopefulthrust_Ebased_n.x());
+        System.out.println("For the negative BeamCal");
+        System.out.println("The thrust from hits is " + thrustAxis_hits_n.magnitude());
+        System.out.println("The thrust(diff-corr method) from hits(E-weighted) is " + hopefulthrust_Ebased_n.toString());
+	System.out.println("The thrustAxis from hits is " + thrustAxis_hits_n.toString());
 	
 	/*
 	//Thrust quantities computed from final state particles(traditional jets?)
@@ -362,6 +417,7 @@ public class BeamParameterDetermination extends Driver {
         System.out.println("finished event "+ ++eventNumber);        
 	System.out.println("Total energy deposited across BeamCal: " + sumOfEnergy);
 	energyDepOverEvents += sumOfEnergy;
+	
 	System.out.println("Highest energy deposited on a pixel: " + maxPixelEnergy 
 			   + "on layer " + layerOfMaxE);
 	System.out.println("L_R assym number for this event, weighted by E:" + (sum_LR_E/sumOfEnergy));
@@ -381,6 +437,16 @@ public class BeamParameterDetermination extends Driver {
     private boolean wholeBcal = true;
     private boolean layersBcal = true;
     private double energyDepOverEvents = 0;
+
+    //Beam Parameter Observable
+    private List<Double> LR_assym_pos = new ArrayList<Double>();
+    private List<Double> TD_assym_pos = new ArrayList<Double>();
+    private List<Double> LR_assym_neg = new ArrayList<Double>();
+    private List<Double> TD_assym_neg = new ArrayList<Double>();
+    private List<Double> thrust_pos = new ArrayList<Double>();
+    private List<Double> thrust_neg = new ArrayList<Double>();
+
+
     private HashSet<Integer> layersHit = new HashSet<Integer>();
     private HashSet<Integer> layersHit2 = new HashSet<Integer>();
     //xml derived variables

@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.lang.String;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.FileWriter;
 
 import hep.io.stdhep.*;
 import hep.io.xdr.XDRInputStream;
@@ -70,37 +71,41 @@ public class StdhepQ extends Driver {
    //and initializes all persistent data
    public void startOfData() {
       eventNumber = 0;
-      String root_mode = "NEW";
+      //String root_mode = "NEW";
       System.out.println("\n\nHELLOOOOO START\n\n");
         
       try {
-         root = new Jroot(jrootFile,root_mode);
+         //root = new Jroot(jrootFile,root_mode);
 
          // Resultant Momentum (Pr) vs. Momentum Transfer ( sqrt(Q^2) )
-         root.init("TH2D","prVQ","prVQ","P#_{r} (y) vs. #sqrt{Q#^{2} } (x)", 200, 0, 3, 200, 0, 5 );
-         root.init("TH2D","prVeQ","prVeQ","P#_{r} (y) vs. #sqrt{Q#^{2} } (x)", 200, 0, 3, 200, 0, 5 );
-         root.init("TH2D","prVpQ","prVpQ","P#_{r} (y) vs. #sqrt{Q#^{2} } (x)", 200, 0, 3, 200, 0, 5 );
-
-         // Ocurrences of #P_r
-         //root.init("TH1D","timesVpr","timesVpr","Occurences of #P_r of Resultant Particles", 200, 0, 1.8 );
+         //root.init("TH2D","prVQ","prVQ","P#_{r} (y) vs. #sqrt{Q#^{2} } (x)", 200, 0, 3, 200, 0, 5 );
+         //root.init("TH2D","prVeQ","prVeQ","P#_{r} (y) vs. #sqrt{Q#^{2} } (x)", 200, 0, 3, 200, 0, 5 );
+         //root.init("TH2D","prVpQ","prVpQ","P#_{r} (y) vs. #sqrt{Q#^{2} } (x)", 200, 0, 3, 200, 0, 5 );
+         String path = "/export/home/spmestra/ilc_main/output/";
+         fw = new FileWriter("prVQ"); 
+         efw = new FileWriter("prVeQ");    
+         pfw = new FileWriter("prVpQ");    
 
          //file process loop
          int total = 0;
-         int limit = 100000;
+         int limit = 2000000;
          for(String filename: stdhepfilelist) {
             StdhepReader reader = new StdhepReader(filename);
             for (int i=0;i<reader.getNumberOfEvents();i++) {
                StdhepRecord record = reader.nextRecord();
                if (record instanceof StdhepEvent) {
                   StdhepEvent event = (StdhepEvent) record;
-                  //do stuff with even
+                  //do stuff with event
                   analyze(event);
                }
                if (total++ > limit) break;
             }
             if (total > limit) break;
          } 
-         root.end();
+         //root.end();
+         fw.close();
+         efw.close();
+         pfw.close();
 
       } catch (java.io.IOException e) {
          System.out.println(e);
@@ -137,17 +142,17 @@ public class StdhepQ extends Driver {
             int par1 = event.getJMOHEP(p, 1);
                
             // Parse e+/e-
-            if(ID==11 || ID==-11){ 
-               System.out.println ( "Parents: "+par0+", "+par1 );
-               System.out.println ( "Self: "+p);
-	       if(ID==11 || ID==-11) System.out.println("====>ID: "+ID+"<====");
-               else System.out.println("ID: "+ID);
-               System.out.println("State: "+event.getISTHEP(p) );
-               System.out.printf("P: (%.8f, %.8f, %.8f) \n", x, y, z);
+            //if(ID==11 || ID==-11){ 
+               //System.out.println ( "Parents: "+par0+", "+par1 );
+               //System.out.println ( "Self: "+p);
+	       //if(ID==11||ID==-11) System.out.println("====>ID: "+ID+"<====");
+               //else System.out.println("ID: "+ID);
+               //System.out.println("State: "+event.getISTHEP(p) );
+               //System.out.printf("P: (%.8f, %.8f, %.8f) \n", x, y, z);
                //System.out.println("Pmag: "+mag);
                //System.out.printf("r: (%.8f, %.8f, %.8f) \n", u, v, w);
-               System.out.println("E: "+En+"\n");
-            }
+               //System.out.println("E: "+En+"\n");
+            //}
             // End comparisons
 
             boolean neutrino = (ID==12 || ID==14 || ID==16 || ID==18 );
@@ -167,9 +172,12 @@ public class StdhepQ extends Driver {
          //root.fill("timesVpr", mag_pr );
          double M = Q;
          if (R>Q) M = R;
-         root.fill("prVQ", M, mag_pr);
-         root.fill("prVeQ", Q, mag_pr);
-         root.fill("prVpQ", R, mag_pr);
+         //root.fill("prVQ", M, mag_pr);
+         //root.fill("prVeQ", Q, mag_pr);
+         //root.fill("prVpQ", R, mag_pr);
+         fw.write(M+" "+mag_pr+"\n");
+         efw.write(Q+" "+mag_pr+"\n");
+         pfw.write(R+" "+mag_pr+"\n");
       } catch(java.io.IOException e) {
          System.out.println(e);
          System.exit(1);
@@ -199,4 +207,5 @@ public class StdhepQ extends Driver {
 
    //variables for jroot file construction and background/signal file reading
    private Jroot root;
+   private FileWriter fw; private FileWriter efw; private FileWriter pfw;
 }
