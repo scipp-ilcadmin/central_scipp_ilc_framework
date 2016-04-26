@@ -279,8 +279,7 @@ public class BeamParameterDetermination extends Driver {
 
 	//Now run through these again and plot from mean
 	List<BasicHep3Vector> vecs_fromMean_pos = new ArrayList<BasicHep3Vector>();
-	List<BasicHep3Vector> vecs_fromMean_neg = new ArrayList<BasicHep3Vector>();
-		
+	List<BasicHep3Vector> vecs_fromMean_neg = new ArrayList<BasicHep3Vector>();		
         for(SimCalorimeterHit hit: hits){
             if(hit.getPosition()[2] > 0){//keep only positive                                                           
 		BasicHep3Vector a = new BasicHep3Vector(hit.getPosition());

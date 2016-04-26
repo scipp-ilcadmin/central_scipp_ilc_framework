@@ -106,6 +106,7 @@ public class StdhepQ extends Driver {
          fw.close();
          efw.close();
          pfw.close();
+         System.out.println("MaxQ: "+maxQ+", MaxR: "+maxR);
 
       } catch (java.io.IOException e) {
          System.out.println(e);
@@ -119,6 +120,9 @@ public class StdhepQ extends Driver {
       double Q = 0; double R = 0;
       // Array to hold perpindicular momenta
       double x_tot = 0; double y_tot = 0;
+      // Checking for P conservation
+      double px_tot, py_tot, pz_tot;
+      px_tot = 0; py_tot = 0; pz_tot = 0;
       try{
          //System.out.println("\n=======================================\n");
          //System.out.println("\n"+n+" particle event\n");
@@ -156,16 +160,22 @@ public class StdhepQ extends Driver {
             // End comparisons
 
             boolean neutrino = (ID==12 || ID==14 || ID==16 || ID==18 );
-            if( !neutrino && fin_st ){
+            // Include or exclude neutrinos
+            boolean filterNeut = (neutrino || !neutrino);
+            if( filterNeut && fin_st ){
                // Want max of Positron and Electron Q
                if( ID==11 && En>100.0 )
                   Q = getQ( x, y, z, En);
+                  if (Q>maxQ) maxQ = Q;
                if( ID==-11 && En>100.0 )
                   R = getQ( x, y, z, En);
+                  if (R>maxR) maxR = R;
                // Vector summmation of all resultant particle perp momentum
                else {
                   x_tot+=x; y_tot+=y;
                }
+               // Sum of momenta to chcek P conservation
+               px_tot+=x; py_tot+=y; pz_tot+=z;
             }
          }
          double mag_pr = Math.sqrt( x_tot*x_tot + y_tot*y_tot );
@@ -175,9 +185,15 @@ public class StdhepQ extends Driver {
          //root.fill("prVQ", M, mag_pr);
          //root.fill("prVeQ", Q, mag_pr);
          //root.fill("prVpQ", R, mag_pr);
-         fw.write(M+" "+mag_pr+"\n");
-         efw.write(Q+" "+mag_pr+"\n");
-         pfw.write(R+" "+mag_pr+"\n");
+         fw.write(M+" "+mag_pr+";\n");
+         efw.write(Q+" "+mag_pr+";\n");
+         pfw.write(R+" "+mag_pr+";\n");
+         
+         // P Conservation test
+         if ( pConservationViolated(px_tot, py_tot, pz_tot) ){
+            System.out.println("Event "+n+" violates momentum conservation:");
+            System.out.println("P: "+px_tot+", "+py_tot+", "+pz_tot);
+         }
       } catch(java.io.IOException e) {
          System.out.println(e);
          System.exit(1);
@@ -193,11 +209,22 @@ public class StdhepQ extends Driver {
       return Math.sqrt( Q2 );
    }
 
+   // checks if the particle momentum can even
+   public static boolean pConservationViolated(double x, double y, double z){
+      if( Math.abs(x) > 0.000001 ) return true;
+      if( Math.abs(y) > 0.000001 ) return true;
+      if( Math.abs(z) > 0.000001 ) return true; 
+      return false;
+   }
+
    // Generator Statuses
    public static final int DOCUMENTATION = 3;
    public static final int FINAL_STATE = 1;
    public static final int INTERMEDIATE = 2;
-  
+ 
+   double maxQ = 0;
+   double maxR = 0; 
+
    /*here all the classwide variables are declared*/
    private int eventNumber;
 

@@ -52,8 +52,8 @@ public class PQAnalysis extends Driver {
         System.out.println("Running PQAnalysis");
         try {
             root = new Jroot(jrootFile, "NEW");
-            root.init("TH1D","hist1", "SumPT", "Total PT of Final State Observable Particles with |cos(theta)|< 0.9",1000, 0,500);
-            root.init("TH1D","hist2", "SumPTv2","Total sqrt(sumx^2+sumy^2) Final State Particles",1000,0,500);
+            root.init("TH1D","hist1", "SumPT", "PT Analysis - Low PT Zoom",200, 0,20);
+            root.init("TH1D","hist2", "CheckSumPT","PT Analysis - Low PT Zoom",200,0,20);
             //root.init("TH2D","E_cos","E_cos","Energy Final State Particles of Cos(theta)", 400, -1, 1, 700, 0, 700);
                       
         }
@@ -84,7 +84,7 @@ public class PQAnalysis extends Driver {
     //PROCESS FUNCTION
     public void process( EventHeader event ) {
         MCParticle mcp = null;
-        //System.out.println("\n\n\n\n\n\n**************NEW EVENT*******************\n\n\n");
+        System.out.println("\n\n\n\n\n\n**************NEW EVENT*******************\n\n\n");
         List<Double> TransMom = new ArrayList<Double>();
         List<Double> PX = new ArrayList<Double>();
         List<Double> PY = new ArrayList<Double>();   
@@ -103,24 +103,27 @@ public class PQAnalysis extends Driver {
                 double PT = Math.sqrt(momX*momX+momY*momY); 
                 double energy = p.getEnergy();
                 double charge = p.getCharge();
-                if (id != 12 && id != -12 && 
+                if (
+                    id != 12 && id != -12 && 
                     id != 14 && id != -14 &&
                     id != 16 && id != -16 &&
                     id != 18 && id != -18 &&
                     id != 1000022 ){ 
+                    if (cos<0.9 || cos>-0.9){
                         PX.add(momX);
                         PY.add(momY);
                         TransMom.add(PT);
+                    }
                 }
                 System.out.println("\n");    
             }
         }
 
 
-        double PTv2 = Math.sqrt(Sum(PX)*Sum(PX)+Sum(PY)*Sum(PY)); 
+        double PTCheckSum = Math.sqrt(Sum(PX)*Sum(PX)+Sum(PY)*Sum(PY)); 
         try{
             root.fill("hist1", Sum(TransMom));   
-            root.fill("hist2", PTv2); 
+            root.fill("hist2", PTCheckSum); 
         }
         catch (java.io.IOException e){
             System.out.println(e);
