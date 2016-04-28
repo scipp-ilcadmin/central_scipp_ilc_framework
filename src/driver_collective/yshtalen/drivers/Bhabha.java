@@ -57,7 +57,9 @@ public class Bhabha extends Driver {
            //naming convention: content_hitType_axes
            
            //theta difference plots
-           root.init("TH1D", "T_hitDiff", "ThitDiff", "Hit/Hit Theta Difference E-P Transformed", 10000, -0.1, 0.1);
+           root.init("TH1D", "T_hitDiff", "T_hitDiff", "Hit/Hit Theta Difference E-P", 1000, -0.02, 0.02);
+           root.init("TH1D", "T_hitDiff_c1", "T_hitDiff_c1", "Hit/Hit Theta Difference E-P tDiff<0.001", 1000, -0.02, 0.02);
+           root.init("TH1D", "T_hitDiff_c2", "T_hitDiff_c2", "Hit/Hit Theta Difference E-P tDiff<0.0005", 1000, -0.02, 0.02);
            root.init("TH2D", "T_2hit_PvE", "T_2hit_PvE", "Hit/Hit Theta P v E Transformed", 10000, 0.0, 0.02, 10000, 0.0, 0.02);
            //root.init("TH1D", "Thitmiss", "Thitmiss", "Hit/Miss Theta Difference E-P Transformed", 10000, -0.02, 0.02);
            root.init("TH2D", "T_2hit_cut_PvE", "T_2hit_cut_PvE", "Hit/Hit Theta P v E after cut", 10000, 0.0, 0.02, 10000, 0.0, 0.02);
@@ -103,10 +105,12 @@ public class Bhabha extends Driver {
     public void endOfData(){
         try {
             //cut results
-            System.out.println( hithitcount +  " of Hit/Hit Events after theta = " + cut + " radian exclusion"); 
-            System.out.println(transform);
-            System.out.println(finals);
-
+            System.out.println(cut1count + " events remaining after tDiff < " + cut1 + " cut.");
+            double ratio1 = 100*(1-(cut1count/3085));
+            System.out.println(ratio1 + " percent hithit events remaining.");
+            System.out.println(cut2count + " events remaining after tDiff < " + cut2 + " cut.");
+            double ratio2 = 100*(1-(cut2count/3085));
+            System.out.println(ratio2 + " percent hithit events remaining.");
             //.cxx edits
 	        root.end();
         }
@@ -291,11 +295,8 @@ public class Bhabha extends Driver {
             hitmiss++;
                 try{
                     //fill energy distribution plots for hit/miss electrons and positrons	
-                    double tDiff = (theta_e-theta_p);
-                    if(Math.abs(tDiff)<cut){
-                        root.fill("T_hit_PvE", theta_e, theta_p);
-                        root.fill("E_hit_PvE", e_e, p_p);
-                    }
+                    root.fill("T_hit_PvE", theta_e, theta_p);
+                    root.fill("E_hit_PvE", e_e, p_p);
                     root.fill("EvT_hit_E", theta_e, e_e);
                     root.fill("EvT_hit_P", theta_p, p_p);
 
@@ -332,9 +333,10 @@ public class Bhabha extends Driver {
                     double tDiff = (theta_e - theta_p);
                     root.fill("T_hitDiff", tDiff);
                     
-                    if(Math.abs(tDiff)<cut){
+                    if(Math.abs(tDiff)<cut1){
                         //add to cut count for fraction events counts
-                        hithitcount++;
+                        cut1count++;
+                        root.fill("T_hitDiff_c1", tDiff);
                         //fill cut theta + energy plots
                         root.fill("T_2hit_cut_PvE", theta_e, theta_p);
                         root.fill("E_2hit_cut_PvE", e_e, p_p);
@@ -345,6 +347,10 @@ public class Bhabha extends Driver {
                         root.fill("HitXY_e", e_scx, e_scy);
                         root.fill("HitXY_p", p_scx, p_scy);
                     }
+                    else if(Math.abs(tDiff)<cut2){
+                        cut2count++;
+                        root.fill("T_hitDiff_c2", tDiff);
+                    }    
                     else{
                         root.fill("T_2hit_cutc_PvE", theta_e, theta_p);
                         root.fill("E_2hit_cutc_PvE", e_e, p_p);
@@ -369,14 +375,14 @@ public class Bhabha extends Driver {
 
     /*here all the classwide variables are declared*/
     private int eventNumber;
-    private int hithitcount;
+    private int cut1count, cut2count;
     private int hitmiss=0;
     private int faceZ = 2950;
-    private double cut = 0.0005;
+    private double cut1 = 0.001;
+    private double cut2 = 0.0005;
     private double x_ang = 0.007;
 
     private String finals = "";
-    private String transform = "";
     //xml derived variables
     private String jrootFile = "";
     
