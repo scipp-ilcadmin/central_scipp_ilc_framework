@@ -52,8 +52,14 @@ public class PQAnalysis extends Driver {
         System.out.println("Running PQAnalysis");
         try {
             root = new Jroot(jrootFile, "NEW");
-            root.init("TH1D","hist1", "SumPT", "PT Analysis - Low PT Zoom",200, 0,20);
-            root.init("TH1D","hist2", "CheckSumPT","PT Analysis - Low PT Zoom",200,0,20);
+            root.init("TH1D","V_n_C","V_n_C", jrootFile,40, 0,20);
+            root.init("TH1D","V_n_A","V_n_A", jrootFile,40, 0,20);
+            root.init("TH1D","V_N_C","V_N_C", jrootFile,40, 0,20);
+            root.init("TH1D","V_N_A","V_N_A", jrootFile,40, 0,20);
+            root.init("TH1D","S_n_C","S_n_C", jrootFile,40, 0,20);
+            root.init("TH1D","S_n_A","S_n_A", jrootFile,40, 0,20);
+            root.init("TH1D","S_N_C","S_N_C", jrootFile,40, 0,20);
+            root.init("TH1D","S_N_A","S_N_A", jrootFile,40, 0,20);
             //root.init("TH2D","E_cos","E_cos","Energy Final State Particles of Cos(theta)", 400, -1, 1, 700, 0, 700);
                       
         }
@@ -85,9 +91,8 @@ public class PQAnalysis extends Driver {
     public void process( EventHeader event ) {
         MCParticle mcp = null;
         System.out.println("\n\n\n\n\n\n**************NEW EVENT*******************\n\n\n");
-        List<Double> TransMom = new ArrayList<Double>();
-        List<Double> PX = new ArrayList<Double>();
-        List<Double> PY = new ArrayList<Double>();   
+        double[][] vectors = new double[4][2];
+        double[] scalars = new double[4]; 
         //iterate through all FINAL_STATE particles in event
         for (MCParticle p : event.getMCParticles()) {    
             int state = p.getGeneratorStatus();
@@ -95,43 +100,66 @@ public class PQAnalysis extends Driver {
                 ParticleType type = p.getType();
                 String name = type.getName();
                 int id = p.getPDGID();
+                boolean isDarkMatter = ( id == 1000022 );
+                if (isDarkMatter) continue;
+                
                 double mom = p.getMomentum().magnitude();
                 double momZ = p.getPZ();
                 double cos = momZ/mom;
                 double momX = p.getPX();
                 double momY = p.getPY();
-                double PT = Math.sqrt(momX*momX+momY*momY); 
+                double scalar =  Math.sqrt(momX*momX+momY*momY);
+                //double PT = Math.sqrt(momX*momX+momY*momY); 
                 double energy = p.getEnergy();
                 double charge = p.getCharge();
-                if (
-                    id != 12 && id != -12 && 
-                    id != 14 && id != -14 &&
-                    id != 16 && id != -16 &&
-                    id != 18 && id != -18 &&
-                    id != 1000022 ){ 
-                    if (cos<0.9 || cos>-0.9){
-                        PX.add(momX);
-                        PY.add(momY);
-                        TransMom.add(PT);
+                boolean isNeutrino = (
+                    id == 12 || id == -12 || 
+                    id == 14 || id == -14 ||
+                    id == 16 || id == -16 ||
+                    id == 18 || id == -18 );
+                boolean isCentral = (cos<0.9 || cos>-0.9);
+                scalars[0]+= scalar;  // S_N_A
+                vectors[0][0]+=momX;  // V_N_A 
+                vectors[0][1]+=momY;
+
+                if (!isNeutrino ){
+                    scalars[1]+=scalar;  // S_n_A
+                    vectors[1][0]+=momX; // V_n_A
+                    vectors[1][1]+=momY;
+                }
+                if (isCentral){
+                    scalars[2]+=scalar;  // S_N_C
+                    vectors[2][0]+=momX; // V_N_C
+                    vectors[2][1]+=momY;
+                    if (!isNeutrino){
+                        scalars[3]+=scalar;  // S_n_C
+                        vectors[3][0]+=momX; // V_n_C
+                        vectors[3][0]+=momY;
                     }
                 }
-                System.out.println("\n");    
             }
+                System.out.println("\n");    
         }
-
-
-        double PTCheckSum = Math.sqrt(Sum(PX)*Sum(PX)+Sum(PY)*Sum(PY)); 
         try{
-            root.fill("hist1", Sum(TransMom));   
-            root.fill("hist2", PTCheckSum); 
+            root.fill("S_N_A", scalars[0]);
+            root.fill("S_n_A", scalars[1]);
+            root.fill("S_N_C", scalars[2]);
+            root.fill("S_n_C", scalars[3]);
+            root.fill("V_N_A", Math.sqrt(vectors[0][0]*vectors[0][0]+vectors[0][1]*vectors[0][1])); 
+            root.fill("V_n_A", Math.sqrt(vectors[1][0]*vectors[1][0]+vectors[1][1]*vectors[1][1]));
+            root.fill("V_N_C", Math.sqrt(vectors[2][0]*vectors[2][0]+vectors[2][1]*vectors[2][1]));
+            root.fill("V_n_C", Math.sqrt(vectors[3][0]*vectors[3][0]+vectors[3][1]*vectors[3][1]));
         }
-        catch (java.io.IOException e){
+        
+        catch (java.io.IOException e) {
             System.out.println(e);
             System.exit(1);
         }
+      
+       
              
              
-        System.out.println("FINISHED EVENT "  + eventNumber++ + "\n\n\n\n\n"); 
+    System.out.println("FINISHED EVENT "  + eventNumber++ + "\n\n\n\n\n"); 
     } // end process 
 
     //  sums the PT of each particle in the event

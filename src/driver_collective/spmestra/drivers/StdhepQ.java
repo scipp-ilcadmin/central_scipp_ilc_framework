@@ -81,10 +81,21 @@ public class StdhepQ extends Driver {
          //root.init("TH2D","prVQ","prVQ","P#_{r} (y) vs. #sqrt{Q#^{2} } (x)", 200, 0, 3, 200, 0, 5 );
          //root.init("TH2D","prVeQ","prVeQ","P#_{r} (y) vs. #sqrt{Q#^{2} } (x)", 200, 0, 3, 200, 0, 5 );
          //root.init("TH2D","prVpQ","prVpQ","P#_{r} (y) vs. #sqrt{Q#^{2} } (x)", 200, 0, 3, 200, 0, 5 );
-         String path = "/export/home/spmestra/ilc_main/output/";
-         fw = new FileWriter("prVQ"); 
-         efw = new FileWriter("prVeQ");    
-         pfw = new FileWriter("prVpQ");    
+       
+         /* Differentiate output by 
+          * 1) which HE particle measuring Q of 
+          *    both: "prVQ", e-: "prVeQ", e+: "prVpQ
+          * 2) Total invariant mass (M)
+          *    >= 2GeV: "hiM", <2GeV: "loM"
+          */
+         String path = jrootFile;        
+ 
+         fw_hiM = new FileWriter(path+"_prVQ_hiM"); 
+         efw_hiM = new FileWriter(path+"_prVeQ_hiM");    
+         pfw_hiM = new FileWriter(path+"_prVpQ_hiM");    
+         fw_loM = new FileWriter(path+"_prVQ_loM");
+         efw_loM = new FileWriter(path+"_prVeQ_loM");
+         pfw_loM = new FileWriter(path+"_prVpQ_loM");
 
          //file process loop
          int total = 0;
@@ -103,9 +114,12 @@ public class StdhepQ extends Driver {
             if (total > limit) break;
          } 
          //root.end();
-         fw.close();
-         efw.close();
-         pfw.close();
+         fw_loM.close();
+         efw_loM.close();
+         pfw_loM.close();
+         fw_hiM.close();
+         efw_hiM.close();
+         pfw_hiM.close();
          System.out.println("MaxQ: "+maxQ+", MaxR: "+maxR);
 
       } catch (java.io.IOException e) {
@@ -119,10 +133,11 @@ public class StdhepQ extends Driver {
       // Values of Momentum Transfer for e- (Q) and e+ (R)
       double Q = 0; double R = 0;
       // Array to hold perpindicular momenta
-      double x_tot = 0; double y_tot = 0;
+      double x_tot=0; double y_tot=0; double z_tot=0;
       // Checking for P conservation
       double px_tot, py_tot, pz_tot;
       px_tot = 0; py_tot = 0; pz_tot = 0;
+      double En_tot = 0;
       try{
          //System.out.println("\n=======================================\n");
          //System.out.println("\n"+n+" particle event\n");
@@ -138,28 +153,10 @@ public class StdhepQ extends Driver {
             double v = event.getVHEP(p, 1);
             double w = event.getVHEP(p, 2);
             double En = event.getPHEP(p, 3);
-            
-            // For comparison to LCIO values
-            //if ( ID==11 || ID==(-11) ){ // && ( y+z>0.0 || x+y<0.0 ) ){
-            double mag = Math.sqrt( x*x + y*y + z*z );
-            int par0 = event.getJMOHEP(p, 0);
-            int par1 = event.getJMOHEP(p, 1);
-               
-            // Parse e+/e-
-            //if(ID==11 || ID==-11){ 
-               //System.out.println ( "Parents: "+par0+", "+par1 );
-               //System.out.println ( "Self: "+p);
-	       //if(ID==11||ID==-11) System.out.println("====>ID: "+ID+"<====");
-               //else System.out.println("ID: "+ID);
-               //System.out.println("State: "+event.getISTHEP(p) );
-               //System.out.printf("P: (%.8f, %.8f, %.8f) \n", x, y, z);
-               //System.out.println("Pmag: "+mag);
-               //System.out.printf("r: (%.8f, %.8f, %.8f) \n", u, v, w);
-               //System.out.println("E: "+En+"\n");
-            //}
-            // End comparisons
-
+            // Running Energy sum of partcles not HE e-||e+
+ 
             boolean neutrino = (ID==12 || ID==14 || ID==16 || ID==18 );
+            
             // Include or exclude neutrinos
             boolean filterNeut = (neutrino || !neutrino);
             if( filterNeut && fin_st ){
@@ -172,23 +169,31 @@ public class StdhepQ extends Driver {
                   if (R>maxR) maxR = R;
                // Vector summmation of all resultant particle perp momentum
                else {
-                  x_tot+=x; y_tot+=y;
+                  x_tot+=x; y_tot+=y; z_tot+=z;
+                  En_tot+=En;
                }
                // Sum of momenta to chcek P conservation
                px_tot+=x; py_tot+=y; pz_tot+=z;
             }
          }
          double mag_pr = Math.sqrt( x_tot*x_tot + y_tot*y_tot );
-         //root.fill("timesVpr", mag_pr );
-         double M = Q;
-         if (R>Q) M = R;
-         //root.fill("prVQ", M, mag_pr);
-         //root.fill("prVeQ", Q, mag_pr);
-         //root.fill("prVpQ", R, mag_pr);
-         fw.write(M+" "+mag_pr+";\n");
-         efw.write(Q+" "+mag_pr+";\n");
-         pfw.write(R+" "+mag_pr+";\n");
+         double P = Q;
          
+         // Relativity-invariant mass of particles not HE e-||e+
+         double M =  Math.sqrt( En_tot*En_tot - 
+                     (x_tot*x_tot + y_tot*y_tot + z_tot*z_tot) );
+         if (R>Q) P = R;
+         
+         if( M>= 2.0){
+            fw_hiM.write(P+" "+mag_pr+";\n");
+            efw_hiM.write(Q+" "+mag_pr+";\n");
+            pfw_hiM.write(R+" "+mag_pr+";\n");
+         } else {
+            fw_loM.write(P+" "+mag_pr+";\n");
+            efw_loM.write(Q+" "+mag_pr+";\n");
+            pfw_loM.write(R+" "+mag_pr+";\n");
+         }         
+
          // P Conservation test
          if ( pConservationViolated(px_tot, py_tot, pz_tot) ){
             System.out.println("Event "+n+" violates momentum conservation:");
@@ -211,9 +216,9 @@ public class StdhepQ extends Driver {
 
    // checks if the particle momentum can even
    public static boolean pConservationViolated(double x, double y, double z){
-      if( Math.abs(x) > 0.000001 ) return true;
-      if( Math.abs(y) > 0.000001 ) return true;
-      if( Math.abs(z) > 0.000001 ) return true; 
+      if( Math.abs(x) > 0.0001 ) return true;
+      if( Math.abs(y) > 0.0001 ) return true;
+      if( Math.abs(z) > 0.0001 ) return true; 
       return false;
    }
 
@@ -234,5 +239,11 @@ public class StdhepQ extends Driver {
 
    //variables for jroot file construction and background/signal file reading
    private Jroot root;
-   private FileWriter fw; private FileWriter efw; private FileWriter pfw;
+   private FileWriter fw_loM; 
+   private FileWriter efw_loM; 
+   private FileWriter pfw_loM;
+   private FileWriter fw_hiM; 
+   private FileWriter efw_hiM; 
+   private FileWriter pfw_hiM;
+
 }
