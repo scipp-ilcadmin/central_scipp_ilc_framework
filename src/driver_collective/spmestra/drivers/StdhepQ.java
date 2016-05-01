@@ -158,7 +158,7 @@ public class StdhepQ extends Driver {
             boolean neutrino = (ID==12 || ID==14 || ID==16 || ID==18 );
             
             // Include or exclude neutrinos
-            boolean filterNeut = (neutrino || !neutrino);
+            boolean filterNeut = ( !neutrino);
             if( filterNeut && fin_st ){
                // Want max of Positron and Electron Q
                if( ID==11 && En>100.0 )
