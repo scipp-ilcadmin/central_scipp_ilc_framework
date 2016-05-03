@@ -60,6 +60,8 @@ public class PQAnalysis extends Driver {
             root.init("TH1D","S_n_A","S_n_A", jrootFile,40, 0,20);
             root.init("TH1D","S_N_C","S_N_C", jrootFile,40, 0,20);
             root.init("TH1D","S_N_A","S_N_A", jrootFile,40, 0,20);
+            root.init("TH1D","M_N_A","M_N_A", jrootFile,40, 0,20);
+            root.init("TH1D","M_n_C","M_n_C", jrootFile,40, 0,20);
             //root.init("TH2D","E_cos","E_cos","Energy Final State Particles of Cos(theta)", 400, -1, 1, 700, 0, 700);
                       
         }
@@ -91,8 +93,9 @@ public class PQAnalysis extends Driver {
     public void process( EventHeader event ) {
         MCParticle mcp = null;
         System.out.println("\n\n\n\n\n\n**************NEW EVENT*******************\n\n\n");
-        double[][] vectors = new double[4][2];
+        double[][] vectors = new double[4][3];
         double[] scalars = new double[4]; 
+        double[] energy = new double[4];
         //iterate through all FINAL_STATE particles in event
         for (MCParticle p : event.getMCParticles()) {    
             int state = p.getGeneratorStatus();
@@ -102,7 +105,7 @@ public class PQAnalysis extends Driver {
                 int id = p.getPDGID();
                 boolean isDarkMatter = ( id == 1000022 );
                 if (isDarkMatter) continue;
-                
+                double E = p.getEnergy(); 
                 double mom = p.getMomentum().magnitude();
                 double momZ = p.getPZ();
                 double cos = momZ/mom;
@@ -110,7 +113,7 @@ public class PQAnalysis extends Driver {
                 double momY = p.getPY();
                 double scalar =  Math.sqrt(momX*momX+momY*momY);
                 //double PT = Math.sqrt(momX*momX+momY*momY); 
-                double energy = p.getEnergy();
+                double E = p.getEnergy();
                 double charge = p.getCharge();
                 boolean isNeutrino = (
                     id == 12 || id == -12 || 
@@ -121,20 +124,27 @@ public class PQAnalysis extends Driver {
                 scalars[0]+= scalar;  // S_N_A
                 vectors[0][0]+=momX;  // V_N_A 
                 vectors[0][1]+=momY;
-
+                vectors[0][2]+=momZ;
+                energy[0]+=E;
                 if (!isNeutrino ){
                     scalars[1]+=scalar;  // S_n_A
                     vectors[1][0]+=momX; // V_n_A
                     vectors[1][1]+=momY;
+                    vectors[1][2]+=momZ;
+                    energy[1]+=E;
                 }
                 if (isCentral){
                     scalars[2]+=scalar;  // S_N_C
                     vectors[2][0]+=momX; // V_N_C
                     vectors[2][1]+=momY;
+                    vectors[2][2]+=momZ;
+                    energy[2]+=E;
                     if (!isNeutrino){
                         scalars[3]+=scalar;  // S_n_C
                         vectors[3][0]+=momX; // V_n_C
-                        vectors[3][0]+=momY;
+                        vectors[3][1]+=momY;
+                        vectors[3][2]+=momZ;
+                        energy[3]+=E;
                     }
                 }
             }
@@ -149,6 +159,8 @@ public class PQAnalysis extends Driver {
             root.fill("V_n_A", Math.sqrt(vectors[1][0]*vectors[1][0]+vectors[1][1]*vectors[1][1]));
             root.fill("V_N_C", Math.sqrt(vectors[2][0]*vectors[2][0]+vectors[2][1]*vectors[2][1]));
             root.fill("V_n_C", Math.sqrt(vectors[3][0]*vectors[3][0]+vectors[3][1]*vectors[3][1]));
+            root.fill("M_N_A", Math.sqrt(energy[0]*energy[0]-(Math.pow(vectors[0][0],2)+Math.pow(vectors[0][1],2)+Math.pow(vectors[0][2],2)))
+            root.fill("M_n_C", Math.sqrt(energy[3]*energy[3]-(Math.pow(vectors[3][0],2)+Math.pow(vectors[3][1],2)+Math.pow(vectors[3][2],2)))
         }
         
         catch (java.io.IOException e) {
