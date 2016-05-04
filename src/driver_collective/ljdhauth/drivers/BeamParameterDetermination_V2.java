@@ -263,6 +263,7 @@ public class BeamParameterDetermination_V2 extends Driver {
 	    }else{ //For negative?
 		//hit_vectors_Mean->Draw()
 		hit_c_neg++;
+		if ( hit_c_neg % 50000 == 0) root.write();
 		root.fill("hit_vectors_Mean",(a.x() - x_avg_neg), (a.y() - y_avg_neg), 
 			  Energy);
 		a.setV(Energy*(a.x() - x_avg_neg), Energy*(a.y() - y_avg_neg),0);
