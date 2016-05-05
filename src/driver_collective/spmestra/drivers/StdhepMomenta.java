@@ -134,7 +134,6 @@ public class StdhepMomenta extends Driver {
       double Etot = 0;
       double M = 0;
 
-
       // Low angle particles where cos(theta)<.9
       double scal_Ptot_loAngle = {0,0,0};
       double[] vec_Ptot_loAngle = {0,0,0};
@@ -176,8 +175,11 @@ public class StdhepMomenta extends Driver {
          }
          
          // Relativity-invariant mass of particles not HE e-||e+
-         M = getM(
+         M = getM(vec_Ptot, En){
+         M_loAngle = getM(vec_Ptot_loAngle, En_loAngle);
          
+                  
+
          if( M>= 2.0){
             fw_hiM.write(P+" "+mag_pr+";\n");
             efw_hiM.write(Q+" "+mag_pr+";\n");
@@ -187,16 +189,20 @@ public class StdhepMomenta extends Driver {
             efw_loM.write(Q+" "+mag_pr+";\n");
             pfw_loM.write(R+" "+mag_pr+";\n");
          }         
-
-         // P Conservation test
-         if ( pConservationViolated(px_tot, py_tot, pz_tot) ){
-            System.out.println("Event "+n+" violates momentum conservation:");
-            System.out.println("P: "+px_tot+", "+py_tot+", "+pz_tot);
-         }
       } catch(java.io.IOException e) {
          System.out.println(e);
          System.exit(1);
       }
+   }
+
+   public static double getM(double[] P, double En){
+       double x = P[0]; double y=P[1]; double z=P[2];
+       return Math.sqrt( En*En - (x*x+y*y+z*z) );
+   }
+
+   public static double getMag( double[] P ){
+       double x = P[0]; double y=P[1]; double z=P[2];
+       return Math.sqrt(x*x+y*y+z*z);
    }
 
    public static double getCosTheta(double x, double y, double z){
@@ -226,9 +232,12 @@ public class StdhepMomenta extends Driver {
 
    //variables for jroot file construction and background/signal file reading
    private Jroot root;
+   
+   // output text files
    private FileWriter fw_scal_Ptot; 
    private FileWriter fw_vec_Ptot; 
    private FileWriter fw_M;
+   
    private FileWriter fw_scal_Ptot_loAngle; 
    private FileWriter fw_vec_Ptot_Angle; 
    private FileWriter fw_M_loAngle;
