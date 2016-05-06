@@ -113,7 +113,7 @@ public class PQAnalysis extends Driver {
                 double momY = p.getPY();
                 double scalar =  Math.sqrt(momX*momX+momY*momY);
                 //double PT = Math.sqrt(momX*momX+momY*momY); 
-                double E = p.getEnergy();
+                
                 double charge = p.getCharge();
                 boolean isNeutrino = (
                     id == 12 || id == -12 || 
@@ -159,8 +159,8 @@ public class PQAnalysis extends Driver {
             root.fill("V_n_A", Math.sqrt(vectors[1][0]*vectors[1][0]+vectors[1][1]*vectors[1][1]));
             root.fill("V_N_C", Math.sqrt(vectors[2][0]*vectors[2][0]+vectors[2][1]*vectors[2][1]));
             root.fill("V_n_C", Math.sqrt(vectors[3][0]*vectors[3][0]+vectors[3][1]*vectors[3][1]));
-            root.fill("M_N_A", Math.sqrt(energy[0]*energy[0]-(Math.pow(vectors[0][0],2)+Math.pow(vectors[0][1],2)+Math.pow(vectors[0][2],2)))
-            root.fill("M_n_C", Math.sqrt(energy[3]*energy[3]-(Math.pow(vectors[3][0],2)+Math.pow(vectors[3][1],2)+Math.pow(vectors[3][2],2)))
+            root.fill("M_N_A", Math.sqrt(energy[0]*energy[0]-(Math.pow(vectors[0][0],2)+Math.pow(vectors[0][1],2)+Math.pow(vectors[0][2],2))));
+            root.fill("M_n_C", Math.sqrt(energy[3]*energy[3]-(Math.pow(vectors[3][0],2)+Math.pow(vectors[3][1],2)+Math.pow(vectors[3][2],2))));
         }
         
         catch (java.io.IOException e) {

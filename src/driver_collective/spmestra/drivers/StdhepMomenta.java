@@ -105,13 +105,12 @@ public class StdhepMomenta extends Driver {
             if (total > limit) break;
          } 
          //root.end();
-         fw_loM.close();
-         efw_loM.close();
-         pfw_loM.close();
-         fw_hiM.close();
-         efw_hiM.close();
-         pfw_hiM.close();
-         System.out.println("MaxQ: "+maxQ+", MaxR: "+maxR);
+         fw_scal_Ptot.close();
+         fw_vec_Ptot.close();
+         fw_M.close();
+         fw_scal_Ptot_loAngle.close();
+         fw_vec_Ptot_loAngle.close();
+         fw_M_loAngle.close();
 
       } catch (java.io.IOException e) {
          System.out.println(e);
@@ -129,20 +128,18 @@ public class StdhepMomenta extends Driver {
       * M: Invariant mass as 
       * (E_1^2+...+E_n^2 - (Px_1^2+...+Px_n^2 + same for Py, Pz) )
       */ 
-      double scal_Ptot = {0,0,0};
+      double scal_Ptot = 0;
       double[] vec_Ptot = {0,0,0};
       double Etot = 0;
       double M = 0;
 
       // Low angle particles where cos(theta)<.9
-      double scal_Ptot_loAngle = {0,0,0};
+      double scal_Ptot_loAngle = 0;
       double[] vec_Ptot_loAngle = {0,0,0};
       double Etot_loAngle = 0;
       double M_loAngle = 0;      
 
       try{
-         //System.out.println("\n=======================================\n");
-         //System.out.println("\n"+n+" particle event\n");
          for ( int p = 0; p<n; p++) {
             int ID = event.getIDHEP( p );                           
             boolean finState = ( event.getISTHEP( p ) == FINAL_STATE);
@@ -153,7 +150,6 @@ public class StdhepMomenta extends Driver {
             double z = event.getPHEP(p, 2);
             double En = event.getPHEP(p, 3);
             double cosAngle = getCosAngle(x,y,z);
-            // Running Energy sum of partcles not HE e-||e+
  
             boolean isNeutrino = (ID==12 || ID==14 || ID==16 || ID==18 );
             boolean isElec = (ID==11);          
@@ -164,31 +160,30 @@ public class StdhepMomenta extends Driver {
                   if(!isNeutrino && (cosAngle <.9) ){
                      addScal(scal_Ptot_loAngle, x, y, z);
                      addVec(vec_Ptot_loAngle, x, y, z);
-                     En_tot_loAngle += En;
+                     Etot_loAngle += En;
                   } 
                   addScal(scal_Ptot, x, y, z);
                   addVec(vec_Ptot, x, y, z);
-                  En_tot += En;
-                  }
+                  Etot += En;
                }
             }
          }
          
          // Relativity-invariant mass of particles not HE e-||e+
-         M = getM(vec_Ptot, En){
-         M_loAngle = getM(vec_Ptot_loAngle, En_loAngle);
+         M = getM(vec_Ptot, Etot);
+         M_loAngle = getM(vec_Ptot_loAngle, Etot_loAngle);
+         double vec_Ptot_mag = getMag( vec_Ptot );
+         double vec_Ptot_mag_loAngle = getMag( vec_Ptot_loAngle );
          
-                  
-
-         if( M>= 2.0){
-            fw_hiM.write(P+" "+mag_pr+";\n");
-            efw_hiM.write(Q+" "+mag_pr+";\n");
-            pfw_hiM.write(R+" "+mag_pr+";\n");
-         } else {
-            fw_loM.write(P+" "+mag_pr+";\n");
-            efw_loM.write(Q+" "+mag_pr+";\n");
-            pfw_loM.write(R+" "+mag_pr+";\n");
-         }         
+         // writing results
+         fw_scal_Ptot.write( scal_Ptot+";\n" );
+         fw_vec_Ptot.write( vec_Ptot_mag+";\n" );
+         fw_M.write( M+";\n" );
+            
+         fw_scal_Ptot_loAngle.write( scal_Ptot_loAngle+";\n" );
+         fw_vec_Ptot_loAngle.write( vec_Ptot_mag_loAngle+";\n" );
+         fw_M_loAngle.write( M_loAngle+";\n" );
+ 
       } catch(java.io.IOException e) {
          System.out.println(e);
          System.exit(1);
@@ -205,8 +200,8 @@ public class StdhepMomenta extends Driver {
        return Math.sqrt(x*x+y*y+z*z);
    }
 
-   public static double getCosTheta(double x, double y, double z){
-       r = Math.sqrt(x*x+y*y+z*z);
+   public static double getCosAngle(double x, double y, double z){
+       double r = Math.sqrt(x*x+y*y+z*z);
        return z/r;
    }
  
@@ -239,7 +234,7 @@ public class StdhepMomenta extends Driver {
    private FileWriter fw_M;
    
    private FileWriter fw_scal_Ptot_loAngle; 
-   private FileWriter fw_vec_Ptot_Angle; 
+   private FileWriter fw_vec_Ptot_loAngle; 
    private FileWriter fw_M_loAngle;
 
 }
