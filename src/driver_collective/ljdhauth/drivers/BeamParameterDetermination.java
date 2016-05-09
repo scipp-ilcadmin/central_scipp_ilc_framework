@@ -15,10 +15,10 @@
  * Basis driver:
  * --> BeamcalEnergyDep.java
  *
- * Last edited on Mar 31, 2016, 3:54 PM
+ * Last edited on May 8, 2016, 3:54 PM
  * @Author: Luc d'Hauthuille 
  *
- * ~ Based on EventAnalysis written by Christopher Milke et al. ~
+ * ~ Based on EventAnalysis written by C. Milke et al. ~
  */
 
 package scipp_ilc.drivers;
@@ -77,9 +77,7 @@ public class BeamParameterDetermination extends Driver {
         String root_mode = "NEW";
 	try {
             root = new Jroot(jrootFile,root_mode);
-	    /*root.init("TH2D","scatter1","posxy","X Y Hit Occupancy"
-	      +  "Over All Layers",350, -175, 175, 350, -175, 175);*/	
-	    // Makes a heatmap over all layers of Bcal
+	    	    
 	    String plotName = "hit_vectors_Mean";
 	    String plotName2 = "X Y Positions of Hits from Mean (Collapsed Bcal)";
 	    root.init("TH2D",plotName, plotName,plotName2, 350, -175, 175, 350, -175, 175);
