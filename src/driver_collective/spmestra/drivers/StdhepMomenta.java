@@ -129,18 +129,35 @@ public class StdhepMomenta extends Driver {
       * (E_1^2+...+E_n^2 - (Px_1^2+...+Px_n^2 + same for Py, Pz) )
       */ 
       double scal_Ptot = 0;
-      double[] vec_Ptot = {0,0,0};
+      double[] vec_Ptot = {0, 0};
       double Etot = 0;
       double M = 0;
 
       // Low angle particles where cos(theta)<.9
       double scal_Ptot_loAngle = 0;
-      double[] vec_Ptot_loAngle = {0,0,0};
+      double[] vec_Ptot_loAngle = {0, 0};
       double Etot_loAngle = 0;
       double M_loAngle = 0;      
 
       try{
-         for ( int p = 0; p<n; p++) {
+         int HE_elec_ind = -1; int HE_posi_ind =-1;
+         double HE_elec_En = 0; double HE_posi_En = 0;
+         // Find highest-energy final-state electron and positron
+         // These are the initial electron/positron
+         for ( int p = 0; p<n; p++){
+            double En = event.getPHEP(p, 3);
+            int ID = event.getIDHEP( p );
+            boolean finState = ( event.getISTHEP( p ) == FINAL_STATE);
+            if( ID==11 && En>HE_elec_En && finState ){
+               HE_elec_En = En;
+               HE_elec_ind = p;
+            }
+            if( ID==-11 && En>HE_posi_En && finState ){
+               HE_posi_En = En;
+               HE_posi_ind = p;
+            }
+         }
+         for ( int p = 0; p<n; p++){
             int ID = event.getIDHEP( p );                           
             boolean finState = ( event.getISTHEP( p ) == FINAL_STATE);
             
@@ -148,30 +165,28 @@ public class StdhepMomenta extends Driver {
             double x = event.getPHEP(p, 0); 
             double y = event.getPHEP(p, 1); 
             double z = event.getPHEP(p, 2);
+            double[] P = {x,y,z};
             double En = event.getPHEP(p, 3);
             double cosAngle = getCosAngle(x,y,z);
- 
+            
             boolean isNeutrino = (ID==12 || ID==14 || ID==16 || ID==18 );
-            boolean isElec = (ID==11);          
-            boolean isPosi = (ID==-11);
- 
             if( finState ){
-               if( !isElec && !isPosi ){
+               if( p!=HE_elec_ind && p!=HE_posi_ind ){
+                  double[] Pt = {x,y};
                   if(!isNeutrino && (cosAngle <.9) ){
-                     addScal(scal_Ptot_loAngle, x, y, z);
-                     addVec(vec_Ptot_loAngle, x, y, z);
-                     Etot_loAngle += En;
-                  } 
-                  addScal(scal_Ptot, x, y, z);
-                  addVec(vec_Ptot, x, y, z);
-                  Etot += En;
+                     //System.out.println( getMag( Pt ) );
+                     scal_Ptot_loAngle+= getMag( Pt );
+                     vec_Ptot_loAngle = addVec(vec_Ptot_loAngle, Pt );
+                     M_loAngle += getM(x,y,z,En);
+                  }  
+                  scal_Ptot += getMag( Pt );
+                  vec_Ptot = addVec(vec_Ptot, Pt );
+                  M += getM(x,y,z,En);
                }
             }
          }
          
          // Relativity-invariant mass of particles not HE e-||e+
-         M = getM(vec_Ptot, Etot);
-         M_loAngle = getM(vec_Ptot_loAngle, Etot_loAngle);
          double vec_Ptot_mag = getMag( vec_Ptot );
          double vec_Ptot_mag_loAngle = getMag( vec_Ptot_loAngle );
          
@@ -190,14 +205,16 @@ public class StdhepMomenta extends Driver {
       }
    }
 
-   public static double getM(double[] P, double En){
-       double x = P[0]; double y=P[1]; double z=P[2];
+   public static double getM(double x, double y, double z, double En){
        return Math.sqrt( En*En - (x*x+y*y+z*z) );
    }
 
    public static double getMag( double[] P ){
-       double x = P[0]; double y=P[1]; double z=P[2];
-       return Math.sqrt(x*x+y*y+z*z);
+       double sum = 0;
+       for( int i=0; i<P.length; i++){
+          sum+= (P[i]*P[i]);
+       }
+       return Math.sqrt( sum );
    }
 
    public static double getCosAngle(double x, double y, double z){
@@ -205,12 +222,12 @@ public class StdhepMomenta extends Driver {
        return z/r;
    }
  
-   public static void addScal(double s, double x, double y, double z){
-      s+= Math.sqrt( x*x+y*y+z*z );
-   }
-
-   public static void addVec(double[] v, double x, double y, double z){
-      v[0]+=x; v[1]+=y; v[2]+=z;
+   public static double[] addVec(double[] u, double[] v){
+      double[] s = new double[ u.length]; 
+      for( int i=0; i< u.length; i++){
+         s[i] = u[i] + v[i];
+      }
+      return s;
    }
 
    // Generator Statuses

@@ -62,6 +62,12 @@ public class PQAnalysis extends Driver {
             root.init("TH1D","S_N_A","S_N_A", jrootFile,40, 0,20);
             root.init("TH1D","M_N_A","M_N_A", jrootFile,40, 0,20);
             root.init("TH1D","M_n_C","M_n_C", jrootFile,40, 0,20);
+            root.init("TH2D","V_S_n_C","V_S_n_C", jrootFile,40 , 0, 20, 40, 0 , 20); 
+            root.init("TH2D","V_S_N_A","V_S_N_A", jrootFile,40 , 0, 20, 40, 0 , 20);
+            root.init("TH2D","V_M_n_C","V_M_n_C", jrootFile,40 , 0, 20, 40, 0 , 20); 
+            root.init("TH2D","V_M_N_A","V_M_N_A", jrootFile,40 , 0, 20, 40, 0 , 20);
+            root.init("TH2D","S_M_n_C","S_M_n_C", jrootFile,40 , 0, 20, 40, 0 , 20);
+            root.init("TH2D","S_M_N_A","S_M_N_A", jrootFile,40 , 0, 20, 40, 0 , 20);
             //root.init("TH2D","E_cos","E_cos","Energy Final State Particles of Cos(theta)", 400, -1, 1, 700, 0, 700);
                       
         }
@@ -161,6 +167,15 @@ public class PQAnalysis extends Driver {
             root.fill("V_n_C", Math.sqrt(vectors[3][0]*vectors[3][0]+vectors[3][1]*vectors[3][1]));
             root.fill("M_N_A", Math.sqrt(energy[0]*energy[0]-(Math.pow(vectors[0][0],2)+Math.pow(vectors[0][1],2)+Math.pow(vectors[0][2],2))));
             root.fill("M_n_C", Math.sqrt(energy[3]*energy[3]-(Math.pow(vectors[3][0],2)+Math.pow(vectors[3][1],2)+Math.pow(vectors[3][2],2))));
+            root.fill("V_S_n_C", scalars[3], Math.sqrt(vectors[3][0]*vectors[3][0]+vectors[3][1]*vectors[3][1]));
+            root.fill("V_S_N_A", scalars[0], Math.sqrt(vectors[0][0]*vectors[0][0]+vectors[0][1]*vectors[0][1]));
+            root.fill("V_M_n_C", Math.sqrt(energy[3]*energy[3]-(Math.pow(vectors[3][0],2)+Math.pow(vectors[3][1],2)+
+            Math.pow(vectors[3][2],2))) ,Math.sqrt(vectors[3][0]*vectors[3][0]+vectors[3][1]*vectors[3][1]));
+            
+            root.fill("V_M_N_A", Math.sqrt(energy[0]*energy[0]-(Math.pow(vectors[0][0],2)+Math.pow(vectors[0][1],2)+
+            Math.pow(vectors[0][2],2))) ,Math.sqrt(vectors[0][0]*vectors[0][0]+vectors[0][1]*vectors[0][1]));
+            root.fill("S_M_n_C", scalars[3], Math.sqrt(energy[3]*energy[3]-(Math.pow(vectors[3][0],2)+Math.pow(vectors[3][1],2)+Math.pow(vectors[3][2],2))));
+            root.fill("S_M_N_A", scalars[0], Math.sqrt(energy[0]*energy[0]-(Math.pow(vectors[0][0],2)+Math.pow(vectors[0][1],2)+Math.pow(vectors[0][2],2))));
         }
         
         catch (java.io.IOException e) {
