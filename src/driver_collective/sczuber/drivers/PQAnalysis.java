@@ -62,12 +62,12 @@ public class PQAnalysis extends Driver {
             root.init("TH1D","S_N_A","S_N_A", jrootFile,40, 0,20);
             root.init("TH1D","M_N_A","M_N_A", jrootFile,40, 0,20);
             root.init("TH1D","M_n_C","M_n_C", jrootFile,40, 0,20);
-            root.init("TH2D","V_S_n_C","V_S_n_C", jrootFile,40 , 0, 20, 40, 0 , 20); 
-            root.init("TH2D","V_S_N_A","V_S_N_A", jrootFile,40 , 0, 20, 40, 0 , 20);
-            root.init("TH2D","V_M_n_C","V_M_n_C", jrootFile,40 , 0, 20, 40, 0 , 20); 
-            root.init("TH2D","V_M_N_A","V_M_N_A", jrootFile,40 , 0, 20, 40, 0 , 20);
-            root.init("TH2D","S_M_n_C","S_M_n_C", jrootFile,40 , 0, 20, 40, 0 , 20);
-            root.init("TH2D","S_M_N_A","S_M_N_A", jrootFile,40 , 0, 20, 40, 0 , 20);
+            root.init("TH2D","V_S_n_C","V_S_n_C", jrootFile,80 , 0, 20, 80, 0 , 20); 
+            root.init("TH2D","V_S_N_A","V_S_N_A", jrootFile,80 , 0, 20, 80, 0 , 20);
+            root.init("TH2D","V_M_n_C","V_M_n_C", jrootFile,80 , 0, 20, 80, 0 , 20); 
+            root.init("TH2D","V_M_N_A","V_M_N_A", jrootFile,80 , 0, 20, 80, 0 , 20);
+            root.init("TH2D","S_M_n_C","S_M_n_C", jrootFile,80 , 0, 20, 80, 0 , 20);
+            root.init("TH2D","S_M_N_A","S_M_N_A", jrootFile,80 , 0, 20, 80, 0 , 20);
             //root.init("TH2D","E_cos","E_cos","Energy Final State Particles of Cos(theta)", 400, -1, 1, 700, 0, 700);
                       
         }
