@@ -135,13 +135,27 @@ public class StdhepQ extends Driver {
       // Array to hold perpindicular momenta
       double x_tot=0; double y_tot=0; double z_tot=0;
       // Checking for P conservation
-      double px_tot, py_tot, pz_tot;
-      px_tot = 0; py_tot = 0; pz_tot = 0;
       double En_tot = 0;
+      double M = 0;
+      
       try{
-         //System.out.println("\n=======================================\n");
-         //System.out.println("\n"+n+" particle event\n");
-         for ( int p = 0; p<n; p++) {
+         int HE_elec_ind = -1; int HE_posi_ind =-1;
+         double HE_elec_En = 0; double HE_posi_En = 0;
+
+         for ( int p=0; p<n; p++){
+            double En = event.getPHEP(p, 3);
+            int ID = event.getIDHEP( p );
+            boolean finState = ( event.getISTHEP( p ) == FINAL_STATE);
+            if( ID==11 && En>HE_elec_En && finState ){
+               HE_elec_En = En;
+               HE_elec_ind = p;
+            }
+            if( ID==-11 && En>HE_posi_En && finState ){
+               HE_posi_En = En;
+               HE_posi_ind = p;
+            }
+         } 
+         for ( int p=0; p<n; p++) {
             int ID = event.getIDHEP( p );                           
             boolean fin_st = ( event.getISTHEP( p ) == FINAL_STATE);
             
@@ -161,27 +175,28 @@ public class StdhepQ extends Driver {
             boolean filterNeut = ( !neutrino);
             if( filterNeut && fin_st ){
                // Want max of Positron and Electron Q
-               if( ID==11 && En>100.0 )
+               if( p==HE_elec_ind ){
                   Q = getQ( x, y, z, En);
                   if (Q>maxQ) maxQ = Q;
-               if( ID==-11 && En>100.0 )
+               }
+               if( p==HE_posi_ind ){
                   R = getQ( x, y, z, En);
                   if (R>maxR) maxR = R;
+               }
                // Vector summmation of all resultant particle perp momentum
                else {
                   x_tot+=x; y_tot+=y; z_tot+=z;
                   En_tot+=En;
+                  M += Math.sqrt( En*En -(x*x + y*y + z*z) );
                }
-               // Sum of momenta to chcek P conservation
-               px_tot+=x; py_tot+=y; pz_tot+=z;
             }
          }
          double mag_pr = Math.sqrt( x_tot*x_tot + y_tot*y_tot );
          double P = Q;
          
          // Relativity-invariant mass of particles not HE e-||e+
-         double M =  Math.sqrt( En_tot*En_tot - 
-                     (x_tot*x_tot + y_tot*y_tot + z_tot*z_tot) );
+         //double M =  Math.sqrt( En_tot*En_tot - 
+         //            (x_tot*x_tot + y_tot*y_tot + z_tot*z_tot) );
          if (R>Q) P = R;
          
          if( M>= 2.0){
@@ -193,12 +208,6 @@ public class StdhepQ extends Driver {
             efw_loM.write(Q+" "+mag_pr+";\n");
             pfw_loM.write(R+" "+mag_pr+";\n");
          }         
-
-         // P Conservation test
-         if ( pConservationViolated(px_tot, py_tot, pz_tot) ){
-            System.out.println("Event "+n+" violates momentum conservation:");
-            System.out.println("P: "+px_tot+", "+py_tot+", "+pz_tot);
-         }
       } catch(java.io.IOException e) {
          System.out.println(e);
          System.exit(1);
@@ -212,14 +221,6 @@ public class StdhepQ extends Driver {
       double Q2 = 2*En*P*(1 - ( Math.abs(z)/r ) );
       //System.out.println("Q in function: "+Q2 );
       return Math.sqrt( Q2 );
-   }
-
-   // checks if the particle momentum can even
-   public static boolean pConservationViolated(double x, double y, double z){
-      if( Math.abs(x) > 0.0001 ) return true;
-      if( Math.abs(y) > 0.0001 ) return true;
-      if( Math.abs(z) > 0.0001 ) return true; 
-      return false;
    }
 
    // Generator Statuses
