@@ -71,37 +71,44 @@ public class AA_lowptAnalysis extends Driver {
     //and initializes all persistent data
     public void startOfData() {
         eventNumber = 0;
-        String root_mode = "NEW";
+        logCount1 = 0;
+        logCount2 = 0;
+        String root_mode = "UPDATE";
 
         try {
             root = new Jroot(jrootFile,root_mode);
-            root.init("TH1D", "detect_scalar", "detect_scalar", "detect_scalar", 1000, 0, 1000);
-            root.init("TH1D", "detect_vector", "detect_vector", "detect_vector", 1000, 0, 1000);
-            root.init("TH1D", "detect_mass", "detect_mass", "detect_mass", 1000, 0, 1000);
-            root.init("TH1D", "true_scalar", "true_scalar", "true_scalar", 1000, 0, 1000);
-            root.init("TH1D", "true_vector", "true_vector", "true_vector", 1000, 0, 1000);
-            root.init("TH1D", "true_mass", "true_mass", "true_mass", 1000, 0, 1000);
+            root.init("TH1D", "detect_scalar", "detect_scalar", "detect_scalar", 1000, 0, 100);
+            root.init("TH1D", "detect_vector", "detect_vector", "detect_vector", 1000, 0, 100);
+            root.init("TH1D", "detect_mass", "detect_mass", "detect_mass", 1000, 0, 100);
+            root.init("TH1D", "true_scalar", "true_scalar", "true_scalar", 1000, 0, 100);
+            root.init("TH1D", "true_vector", "true_vector", "true_vector", 1000, 0, 100);
+            root.init("TH1D", "true_mass", "true_mass", "true_mass", 1000, 0, 100);
 
             //file process loop
             int total = 0;
-            int limit = 1000;
+            //int limit = 10000;
             for(String filename: stdhepfilelist) {
-                System.out.println("\n\n\n\n\n\n\nFILENAME = " + filename + "\n\n\n\n\n\n\n\n");
+                System.out.println("FILENAME = " + filename);
                 StdhepReader reader = new StdhepReader(filename);
                 for (int i=0;i<reader.getNumberOfEvents();i++) {
                     StdhepRecord record = reader.nextRecord();
                     if (record instanceof StdhepEvent) {
                         StdhepEvent event = (StdhepEvent) record;
-                        if (total++ % 10000 == 0) System.out.println("\n\n\n   TOTAL = " + total + "\n\n\n");
+                        if (++total % 1000 == 0) {
+                            System.out.println("    TOTAL = " + total);
+                            root.proc("f.Write()");
+                        }
                         //do stuff with even
                         analyze(event);
                     }
-                    if (total++ > limit) break;
+                    //if (total > limit) break;
                 }
-                if (total > limit) break;
+                //if (total > limit) break;
             } 
             System.out.println("\n\nFINISHED " + total);
-            root.end();
+            System.out.println("\n\nLOGCOUNT1 = " + logCount1);
+            System.out.println("\n\nLOGCOUNT2 = " + logCount2);
+            //root.end();
 
         } catch (java.io.IOException e) {
             System.out.println(e);
@@ -111,6 +118,7 @@ public class AA_lowptAnalysis extends Driver {
 
     private void analyze(StdhepEvent event){
         int number_particles = event.getNHEP();
+        int nF = 0;
 
         //these two sets of values are witheld from the total
         //until it is determined that the particle they derived
@@ -118,36 +126,38 @@ public class AA_lowptAnalysis extends Driver {
         //i.e. that particle's energy is not the highest
         double[] init_e = {0,0,0,0,0}; //px,py,pz,E,detectable
         double[] init_p = {0,0,0,0,0};
+        double Momentum_x = 0;
+
 
         //not-detectable  , detectable  : px, py, pz, E, scalar
         double[][] totals = { {0,0,0,0,0}, {0,0,0,0,0} };
 
         //find initial electron and positron
         for (int particleI = 0; particleI < number_particles; particleI++) {
-            if ( event.getISTHEP( particleI ) != FINAL_STATE) continue;
-
+            if ( event.getISTHEP(particleI) != FINAL_STATE ) continue;
+            nF++;
             int pdgid = event.getIDHEP( particleI ) ;
 
             double mom_x  = event.getPHEP(particleI, 0); 
+            //Momentum_x  += event.getPHEP(particleI, 0); 
             double mom_y  = event.getPHEP(particleI, 1); 
             double mom_z  = event.getPHEP(particleI, 2);
             double energy = event.getPHEP(particleI, 3);
 
             int is_detectable = check_if_detectable(pdgid,mom_x,mom_y,mom_z);
+            if (is_detectable == 0) ++logCount1;
 
-            if ( pdgid == Electron_ID && energy > init_e[3] ) {
-                update_totals(totals,init_e[0],init_e[1],init_e[2],init_e[3],(int)init_e[4]);
-                update_initial(init_e,mom_x,mom_y,mom_z,energy,(int)is_detectable);
+            if ( pdgid == Electron_ID && energy > init_e[3] )
+                update_initial(init_e,mom_x,mom_y,mom_z,energy,is_detectable);
 
-            } else if ( pdgid == Positron_ID && energy > init_p[3] ) {
-                update_totals(totals,init_p[0],init_p[1],init_p[2],init_p[3],(int)init_p[4]);
-                update_initial(init_p,mom_x,mom_y,mom_z,energy,(int)is_detectable);
+            if ( pdgid == Positron_ID && energy > init_p[3] )
+                update_initial(init_p,mom_x,mom_y,mom_z,energy,is_detectable);
 
-            } else {
-                update_totals(totals,mom_x,mom_y,mom_z,energy,is_detectable);
-            }
+            update_totals(totals,mom_x,mom_y,mom_z,energy,is_detectable);
         }
-
+        System.out.println(nF);
+        //update_totals(totals,-init_e[0],-init_e[1],-init_e[2],-init_e[3],(int)init_e[4]);
+        //update_totals(totals,-init_p[0],-init_p[1],-init_p[2],-init_p[3],(int)init_p[4]);
 
         double square_detect_px = Math.pow( totals[1][0], 2 );
         double square_detect_py = Math.pow( totals[1][1], 2 );
@@ -155,7 +165,7 @@ public class AA_lowptAnalysis extends Driver {
         double square_detect_pE = Math.pow( totals[1][3], 2 );
 
         double total_detect_scalar = totals[1][4];
-        double total_detect_vector = Math.sqrt(square_detect_px + square_detect_py);
+        double total_detect_vector = Math.sqrt( square_detect_px + square_detect_py );
         double total_detect_mass   = Math.sqrt( square_detect_pE - square_detect_px - square_detect_py - square_detect_pz );
 
 
@@ -167,6 +177,14 @@ public class AA_lowptAnalysis extends Driver {
         double total_true_scalar = totals[0][4] + totals[1][4];
         double total_true_vector = Math.sqrt(square_true_px + square_true_py);
         double total_true_mass   = Math.sqrt( square_true_pE - square_true_px - square_true_py - square_true_pz );
+
+        //System.out.println("     " + totals[0][0] +" "+ totals[0][1] +" "+ totals[0][2] +" "+ totals[0][3] +" "+ totals[0][4] +
+        //                   " ;;; " + totals[1][0] +" "+ totals[1][1] +" "+ totals[1][2] +" "+ totals[1][3] +" "+ totals[1][4] );
+        //if (Math.abs(init_e[0] + init_p[0]) - Math.abs(totals[0][0] + totals[1][0]) > 1) 
+            //System.out.println(Math.abs(init_e[0] + init_p[0]) + " " + Math.abs(totals[0][0] + totals[1][0]) );
+        //if (Math.abs(init_e[1] + init_p[1]) - Math.abs(totals[0][1] + totals[1][1]) > 1) 
+            //System.out.println("    " + Math.abs(init_e[1] + init_p[1]) + " " + Math.abs(totals[0][1] + totals[1][1]) +"\n");
+        //System.out.println( "momx = " + Math.abs(Momentum_x) + "; " + Math.abs(init_e[0] + init_p[0]) + ", " + init_e[0] + ", " + init_p[0]);
 
         try {
             root.fill("detect_scalar", total_detect_scalar);
@@ -201,6 +219,7 @@ public class AA_lowptAnalysis extends Driver {
         totals[is_detectable][4] += Math.sqrt( mom_x*mom_x + mom_y*mom_y );
     }
 
+
     private int check_if_detectable( int id, double mom_x, double mom_y, double mom_z ) {
         boolean is_neutrino = ( id == 12 || id == -12 || 
                                 id == 14 || id == -14 ||
@@ -227,6 +246,8 @@ public class AA_lowptAnalysis extends Driver {
 
     /*here all the classwide variables are declared*/
     private int eventNumber;
+    private int logCount1;
+    private int logCount2;
 
     //xml derived variables
     private String jrootFile = "";
