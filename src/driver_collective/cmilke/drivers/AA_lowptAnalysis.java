@@ -77,12 +77,12 @@ public class AA_lowptAnalysis extends Driver {
 
         try {
             root = new Jroot(jrootFile,root_mode);
-            root.init("TH1D", "detect_scalar", "detect_scalar", "detect_scalar", 1000, 0, 100);
-            root.init("TH1D", "detect_vector", "detect_vector", "detect_vector", 1000, 0, 100);
-            root.init("TH1D", "detect_mass", "detect_mass", "detect_mass", 1000, 0, 100);
-            root.init("TH1D", "true_scalar", "true_scalar", "true_scalar", 1000, 0, 100);
-            root.init("TH1D", "true_vector", "true_vector", "true_vector", 1000, 0, 100);
-            root.init("TH1D", "true_mass", "true_mass", "true_mass", 1000, 0, 100);
+            root.init("TH1D", "detect_scalar", "detect_scalar", "detect_scalar", 10000, 0, 100);
+            root.init("TH1D", "detect_vector", "detect_vector", "detect_vector", 10000, 0, 100);
+            root.init("TH1D", "detect_mass", "detect_mass", "detect_mass", 10000, 0, 1000);
+            root.init("TH1D", "true_scalar", "true_scalar", "true_scalar", 10000, 0, 100);
+            root.init("TH1D", "true_vector", "true_vector", "true_vector", 10000, 0, 100);
+            root.init("TH1D", "true_mass", "true_mass", "true_mass", 10000, 0, 1000);
 
             //file process loop
             int total = 0;
@@ -106,9 +106,7 @@ public class AA_lowptAnalysis extends Driver {
                 //if (total > limit) break;
             } 
             System.out.println("\n\nFINISHED " + total);
-            System.out.println("\n\nLOGCOUNT1 = " + logCount1);
-            System.out.println("\n\nLOGCOUNT2 = " + logCount2);
-            //root.end();
+            root.end();
 
         } catch (java.io.IOException e) {
             System.out.println(e);
@@ -118,15 +116,32 @@ public class AA_lowptAnalysis extends Driver {
 
     private void analyze(StdhepEvent event){
         int number_particles = event.getNHEP();
-        int nF = 0;
+
+        int electronI = -1;
+        int positronI = -1;
+        double electronEnergy = 0;
+        double positronEnergy = 0;
+
+        for (int particleI = 0; particleI < number_particles; particleI++) {
+            if ( event.getISTHEP(particleI) != FINAL_STATE ) continue;
+
+            int pdgid = event.getIDHEP( particleI ) ;
+            double energy = event.getPHEP(particleI, 3);
+
+            if ( pdgid == Electron_ID && energy > electronEnergy ) {
+                electronI = particleI;
+                electronEnergy = energy;
+            }
+            if ( pdgid == Electron_ID && energy > positronEnergy ) {
+                positronI = particleI;
+                positronEnergy = energy;
+            }
+        }
 
         //these two sets of values are witheld from the total
         //until it is determined that the particle they derived
         //their values from was not the initial electron or positron
         //i.e. that particle's energy is not the highest
-        double[] init_e = {0,0,0,0,0}; //px,py,pz,E,detectable
-        double[] init_p = {0,0,0,0,0};
-        double Momentum_x = 0;
 
 
         //not-detectable  , detectable  : px, py, pz, E, scalar
@@ -135,29 +150,18 @@ public class AA_lowptAnalysis extends Driver {
         //find initial electron and positron
         for (int particleI = 0; particleI < number_particles; particleI++) {
             if ( event.getISTHEP(particleI) != FINAL_STATE ) continue;
-            nF++;
+            if ( particleI == electronI ) continue;
+            if ( particleI == positronI ) continue;
             int pdgid = event.getIDHEP( particleI ) ;
 
             double mom_x  = event.getPHEP(particleI, 0); 
-            //Momentum_x  += event.getPHEP(particleI, 0); 
             double mom_y  = event.getPHEP(particleI, 1); 
             double mom_z  = event.getPHEP(particleI, 2);
             double energy = event.getPHEP(particleI, 3);
 
             int is_detectable = check_if_detectable(pdgid,mom_x,mom_y,mom_z);
-            if (is_detectable == 0) ++logCount1;
-
-            if ( pdgid == Electron_ID && energy > init_e[3] )
-                update_initial(init_e,mom_x,mom_y,mom_z,energy,is_detectable);
-
-            if ( pdgid == Positron_ID && energy > init_p[3] )
-                update_initial(init_p,mom_x,mom_y,mom_z,energy,is_detectable);
-
             update_totals(totals,mom_x,mom_y,mom_z,energy,is_detectable);
         }
-        System.out.println(nF);
-        //update_totals(totals,-init_e[0],-init_e[1],-init_e[2],-init_e[3],(int)init_e[4]);
-        //update_totals(totals,-init_p[0],-init_p[1],-init_p[2],-init_p[3],(int)init_p[4]);
 
         double square_detect_px = Math.pow( totals[1][0], 2 );
         double square_detect_py = Math.pow( totals[1][1], 2 );
@@ -178,14 +182,6 @@ public class AA_lowptAnalysis extends Driver {
         double total_true_vector = Math.sqrt(square_true_px + square_true_py);
         double total_true_mass   = Math.sqrt( square_true_pE - square_true_px - square_true_py - square_true_pz );
 
-        //System.out.println("     " + totals[0][0] +" "+ totals[0][1] +" "+ totals[0][2] +" "+ totals[0][3] +" "+ totals[0][4] +
-        //                   " ;;; " + totals[1][0] +" "+ totals[1][1] +" "+ totals[1][2] +" "+ totals[1][3] +" "+ totals[1][4] );
-        //if (Math.abs(init_e[0] + init_p[0]) - Math.abs(totals[0][0] + totals[1][0]) > 1) 
-            //System.out.println(Math.abs(init_e[0] + init_p[0]) + " " + Math.abs(totals[0][0] + totals[1][0]) );
-        //if (Math.abs(init_e[1] + init_p[1]) - Math.abs(totals[0][1] + totals[1][1]) > 1) 
-            //System.out.println("    " + Math.abs(init_e[1] + init_p[1]) + " " + Math.abs(totals[0][1] + totals[1][1]) +"\n");
-        //System.out.println( "momx = " + Math.abs(Momentum_x) + "; " + Math.abs(init_e[0] + init_p[0]) + ", " + init_e[0] + ", " + init_p[0]);
-
         try {
             root.fill("detect_scalar", total_detect_scalar);
             root.fill("detect_vector", total_detect_vector);
@@ -201,15 +197,6 @@ public class AA_lowptAnalysis extends Driver {
 
     }
 
-    private void update_initial(double[] init_array, double mom_x, double mom_y, 
-                                double mom_z, double energy, double is_detectable) {
-
-        init_array[0] = mom_x;
-        init_array[1] = mom_y;
-        init_array[2] = mom_z;
-        init_array[3] = energy;
-        init_array[4] = is_detectable;
-    }
 
     private void update_totals( double[][] totals, double mom_x, double mom_y, double mom_z, double energy, int is_detectable ) {
         totals[is_detectable][0] += mom_x;
