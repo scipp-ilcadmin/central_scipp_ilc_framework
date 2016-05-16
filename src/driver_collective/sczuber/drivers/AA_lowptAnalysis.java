@@ -132,7 +132,7 @@ public class AA_lowptAnalysis extends Driver {
                 electronI = particleI;
                 electronEnergy = energy;
             }
-            if ( pdgid == Positron_ID && energy > positronEnergy ) {
+            if ( pdgid == Electron_ID && energy > positronEnergy ) {
                 positronI = particleI;
                 positronEnergy = energy;
             }

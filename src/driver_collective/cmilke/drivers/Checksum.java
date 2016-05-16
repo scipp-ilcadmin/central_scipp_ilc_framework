@@ -77,9 +77,12 @@ public class Checksum extends Driver {
 
         try {
             root = new Jroot(jrootFile,root_mode);
-            root.init("TH1D", "px", "px", "px", 1000, -10,10);
-            root.init("TH1D", "py", "py", "py", 1000, -10,10);
-            root.init("TH1D", "pz", "pz", "pz", 1000, -10,10);
+            root.init("TH1D", "px_init", "px_init", "px_init", 1000, -10,10);
+            root.init("TH1D", "py_init", "py_init", "py_init", 1000, -10,10);
+            root.init("TH1D", "px_res", "px_res", "px_res", 1000, -10,10);
+            root.init("TH1D", "py_res", "py_res", "py_res", 1000, -10,10);
+            root.init("TH1D", "px_all", "px_all", "px_all", 1000, -10,10);
+            root.init("TH1D", "py_all", "py_all", "py_all", 1000, -10,10);
 
             //file process loop
             int total = 0;
@@ -113,12 +116,14 @@ public class Checksum extends Driver {
 
     private void analyze(StdhepEvent event){
         int number_particles = event.getNHEP();
+
         int electron = 0;
         double eE = 0;
         int positron = 0;
         double pE = 0;
 
         for (int particleI = 0; particleI < number_particles; particleI++) {
+            if ( event.getISTHEP(particleI) != FINAL_STATE ) continue;
             int pdgid = event.getIDHEP( particleI );
             double energy = event.getPHEP(particleI,3);
             if (pdgid == Electron_ID && energy > eE) {
@@ -130,34 +135,37 @@ public class Checksum extends Driver {
                 positron = particleI;
             }
         }
+        
+        double init_px = event.getPHEP(electron, 0); 
+        double init_py = event.getPHEP(electron, 1); 
+        double init_pz = event.getPHEP(electron, 2);
+        init_px += event.getPHEP(positron, 0); 
+        init_py += event.getPHEP(positron, 1); 
+        init_pz += event.getPHEP(positron, 2);
 
-        double px = 0;
-        double py = 0;
-        double pz = 0;
 
-        //px += event.getPHEP(electron, 0); 
-        //py += event.getPHEP(electron, 1); 
-        //pz += event.getPHEP(electron, 2);
-        //px += event.getPHEP(positron, 0); 
-        //py += event.getPHEP(positron, 1); 
-        //pz += event.getPHEP(positron, 2);
-
+        double res_px = 0;
+        double res_py = 0;
+        double res_pz = 0;
 
         for (int particleI = 0; particleI < number_particles; particleI++) {
             if ( event.getISTHEP(particleI) != FINAL_STATE ) continue;
-            //if ( particleI == electron ) continue;
-            //if ( particleI == positron ) continue;
+            if ( particleI == electron ) continue;
+            if ( particleI == positron ) continue;
             int pdgid = event.getIDHEP( particleI ) ;
 
-            px += event.getPHEP(particleI, 0); 
-            py += event.getPHEP(particleI, 1); 
-            pz += event.getPHEP(particleI, 2);
+            res_px += event.getPHEP(particleI, 0); 
+            res_py += event.getPHEP(particleI, 1); 
+            res_pz += event.getPHEP(particleI, 2);
         }
 
         try {
-            root.fill("px", px);
-            root.fill("py", py);
-            root.fill("pz", pz);
+            root.fill("px_res", res_px);
+            root.fill("py_res", res_py);
+            root.fill("px_init", init_px);
+            root.fill("py_init", init_py);
+            root.fill("px_all", init_px + res_px);
+            root.fill("py_all", init_py + res_py);
 
         } catch(java.io.IOException e) {
             System.out.println(e);

@@ -129,14 +129,16 @@ public class StdhepMomenta extends Driver {
       * (E_1^2+...+E_n^2 - (Px_1^2+...+Px_n^2 + same for Py, Pz) )
       */ 
       double scal_Ptot = 0;
-      double[] vec_Ptot = {0, 0};
-      double Etot = 0;
+      double[] vec_Ptot = {0, 0, 0};
+      double[] vec_PTtot = {0, 0};
+      double En_tot = 0;
       double M = 0;
 
       // Low angle particles where cos(theta)<.9
       double scal_Ptot_loAngle = 0;
-      double[] vec_Ptot_loAngle = {0, 0};
-      double Etot_loAngle = 0;
+      double[] vec_Ptot_loAngle = {0, 0, 0};
+      double[] vec_PTtot_loAngle = {0, 0};
+      double En_tot_loAngle = 0;
       double M_loAngle = 0;      
 
       try{
@@ -161,34 +163,35 @@ public class StdhepMomenta extends Driver {
             int ID = event.getIDHEP( p );                           
             boolean finState = ( event.getISTHEP( p ) == FINAL_STATE);
             
-            // Momentum and energy values
+            // Momenta and energy values
             double x = event.getPHEP(p, 0); 
             double y = event.getPHEP(p, 1); 
             double z = event.getPHEP(p, 2);
             double[] P = {x,y,z};
+            double[] PT = {x,y};
             double En = event.getPHEP(p, 3);
             double cosAngle = getCosAngle(x,y,z);
             
             boolean isNeutrino = (ID==12 || ID==14 || ID==16 || ID==18 );
             if( finState ){
                if( p!=HE_elec_ind && p!=HE_posi_ind ){
-                  double[] Pt = {x,y};
                   if(!isNeutrino && (cosAngle <.9) ){
-                     //System.out.println( getMag( Pt ) );
-                     scal_Ptot_loAngle+= getMag( Pt );
-                     vec_Ptot_loAngle = addVec(vec_Ptot_loAngle, Pt );
-                     M_loAngle += getM(x,y,z,En);
+                     scal_Ptot_loAngle+= getMag( PT );
+                     vec_PTtot_loAngle = addVec(vec_PTtot_loAngle, PT);
+                     vec_Ptot_loAngle = addVec(vec_Ptot_loAngle, P );
+                     En_tot_loAngle+= En;
                   }  
-                  scal_Ptot += getMag( Pt );
-                  vec_Ptot = addVec(vec_Ptot, Pt );
-                  M += getM(x,y,z,En);
+                  scal_Ptot += getMag( PT );
+                  vec_PTtot = addVec(vec_PTtot, PT );
+                  vec_Ptot = addVec(vec_Ptot, P );
+                  En_tot += En;
                }
             }
          }
-         
-         // Relativity-invariant mass of particles not HE e-||e+
-         double vec_Ptot_mag = getMag( vec_Ptot );
-         double vec_Ptot_mag_loAngle = getMag( vec_Ptot_loAngle );
+         double vec_Ptot_mag = getMag( vec_PTtot );
+         double vec_Ptot_mag_loAngle = getMag( vec_PTtot_loAngle );
+         M = getM(vec_Ptot, En_tot );
+         M_loAngle = getM(vec_Ptot_loAngle, En_tot_loAngle ); 
          
          // writing results
          fw_scal_Ptot.write( scal_Ptot+";\n" );
@@ -205,8 +208,9 @@ public class StdhepMomenta extends Driver {
       }
    }
 
-   public static double getM(double x, double y, double z, double En){
-       return Math.sqrt( En*En - (x*x+y*y+z*z) );
+   public static double getM(double[] P, double En){
+      double x=P[0]; double y=P[1]; double z=P[2];
+      return Math.sqrt( En*En - (x*x+y*y+z*z) );
    }
 
    public static double getMag( double[] P ){
