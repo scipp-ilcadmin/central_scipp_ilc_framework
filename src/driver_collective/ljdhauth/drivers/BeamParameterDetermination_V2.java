@@ -5,12 +5,13 @@
  * in the BeamCalorimeter, and will later
  * reconstruct beam parameters from these.
  * 
- * OBSERVABLES to be measured: L-R , T-D,
- * & diagonal asymmetries, Thrust axis, total
- * deposition, ...
- *
- * Works in progress: LR & TD assymetry
- * The next thing to start: thrust axis?
+ * OBSERVABLES measured:
+ * L-R, T-D asymms, baricenter ( [<x>, <y>, <z>] )
+ * Thrust and thrust axis from baricenter, total
+ * energy deposited
+ * 
+ * Works in progress: 
+ * To start: Mode-based center, thrust, thrust axis
  *
  * Basis driver:
  * --> BeamcalEnergyDep.java
@@ -115,7 +116,7 @@ public class BeamParameterDetermination_V2 extends Driver {
 	    System.out.println("Array of thrust values for negative BeamCal:" + 
 			       thrust_neg.toString());
 	    System.out.println("*************************************************************" + 
-			       "*************");
+			       "*************\n");
 	   	} catch (java.io.IOException e){
 	    System.out.println(e);
 	    System.exit(1);
@@ -148,8 +149,7 @@ public class BeamParameterDetermination_V2 extends Driver {
 	    double energy = hit.getRawEnergy();
 	    if(vec[2] > 0){
 		sumOfEnergy += energy;
-		//eDep[hit.getLayerNumber()+1] += hit.getRawEnergy();
-		//hitLayerArray[hit.getLayerNumber()+1]++;
+		//eDep[hit.getLayerNumber()+1] += hit.getRawEnergy(); //hitLayerArray[hit.getLayerNumber()+1]++;
 		energyDepth_productSum += energy*transformed_Vec[2]; // Does this change if don't trans-vec?
 		energyDepthL_productSum += energy*(hit.getLayerNumber()+1);
 	    }else{/*working with negative hits?*/}
@@ -232,7 +232,7 @@ public class BeamParameterDetermination_V2 extends Driver {
     public void compute_Thrust(List<SimCalorimeterHit> hits, EventHeader event,double[] loc)
 	throws java.io.IOException{	
 	
-	//******Test CASES*******// //*****END TEST CASES****// 
+	//****Testing****//
 	double x_avg_pos = loc[0]; double y_avg_pos = loc[1];
 	double x_avg_neg = loc[2]; double y_avg_neg = loc[3];
 	//Thrust quantities computed from Calorimeter hits (energy-weighted)
@@ -317,8 +317,8 @@ public class BeamParameterDetermination_V2 extends Driver {
         List<SimCalorimeterHit> hits = event.get(SimCalorimeterHit.class, "BeamCalHits");
 
 	System.out.println("************************************START***" + 
-			   "***********************************");
-	System.out.println("OBSERVABLES:     ");
+			   "***********************************\n");
+	System.out.println("|-_-OBSERVABLES-_-|");
 	//initialize event variables
 	int check_layer = 0;
         boolean reject_negative = true; // reject negative beamcal?
@@ -357,7 +357,7 @@ public class BeamParameterDetermination_V2 extends Driver {
 	System.out.println("Total energy deposited across BeamCal: " + sumOfEnergy);
 	energyDepOverEvents += sumOfEnergy;
 	System.out.println("******************************************" + 
-			   "******************************");
+			   "******************************\n");
 	/* //OUT OF SCOPE/Discontinued
 	   System.out.println("L_R assym number for this event, weighted by E:" + (sum_LR_E/sumOfEnergy));
 	   System.out.println("L_R assym number for this event, weighted by hits:" +

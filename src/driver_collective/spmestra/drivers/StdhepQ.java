@@ -187,7 +187,7 @@ public class StdhepQ extends Driver {
                else {
                   x_tot+=x; y_tot+=y; z_tot+=z;
                   En_tot+=En;
-                  M += Math.sqrt( En*En -(x*x + y*y + z*z) );
+                  //M += Math.sqrt( En*En -(x*x + y*y + z*z) );
                }
             }
          }
@@ -199,6 +199,9 @@ public class StdhepQ extends Driver {
          //            (x_tot*x_tot + y_tot*y_tot + z_tot*z_tot) );
          if (R>Q) P = R;
          
+         M = Math.sqrt( En_tot*En_tot -
+                       (x_tot*x_tot + y_tot*y_tot + z_tot*z_tot) );        
+   
          if( M>= 2.0){
             fw_hiM.write(P+" "+mag_pr+";\n");
             efw_hiM.write(Q+" "+mag_pr+";\n");

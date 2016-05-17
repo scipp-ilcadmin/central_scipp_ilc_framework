@@ -1,5 +1,5 @@
 /*
- * aa_lowptAnalysis.java
+ * Checksum.java
  *
  * Created on July 11, 2013, 10:45 AM
  * Edited on August 26, 2015, 02:21 AM
@@ -77,12 +77,15 @@ public class Checksum extends Driver {
 
         try {
             root = new Jroot(jrootFile,root_mode);
-            root.init("TH1D", "px_init", "px_init", "px_init", 1000, -10,10);
-            root.init("TH1D", "py_init", "py_init", "py_init", 1000, -10,10);
-            root.init("TH1D", "px_res", "px_res", "px_res", 1000, -10,10);
-            root.init("TH1D", "py_res", "py_res", "py_res", 1000, -10,10);
-            root.init("TH1D", "px_all", "px_all", "px_all", 1000, -10,10);
-            root.init("TH1D", "py_all", "py_all", "py_all", 1000, -10,10);
+            root.init("TH1D", "gt_pt_initial", "gt_pt_initial", "gt_pt_initial", 1000, -10,10);
+            root.init("TH1D", "gt_pt_hadronic", "gt_pt_hadronic", "gt_pt_hadronic", 1000, -10,10);
+            root.init("TH1D", "gt_pt_all", "gt_pt_all", "gt_pt_all", 1000, -10,10);
+            root.init("TH1D", "lt_pt_initial", "lt_pt_initial", "lt_pt_initial", 1000, -10,10);
+            root.init("TH1D", "lt_pt_hadronic", "lt_pt_hadronic", "lt_pt_hadronic", 1000, -10,10);
+            root.init("TH1D", "lt_pt_all", "lt_pt_all", "lt_pt_all", 1000, -10,10);
+            root.init("TH1D", "all_pt_initial", "all_pt_initial", "all_pt_initial", 1000, -10,10);
+            root.init("TH1D", "all_pt_hadronic", "all_pt_hadronic", "all_pt_hadronic", 1000, -10,10);
+            root.init("TH1D", "all_pt_all", "all_pt_all", "all_pt_all", 1000, -10,10);
 
             //file process loop
             int total = 0;
@@ -117,55 +120,93 @@ public class Checksum extends Driver {
     private void analyze(StdhepEvent event){
         int number_particles = event.getNHEP();
 
-        int electron = 0;
-        double eE = 0;
-        int positron = 0;
-        double pE = 0;
+        int electronI = -1;
+        int positronI = -1;
+        double electronEnergy = 0;
+        double positronEnergy = 0;
 
         for (int particleI = 0; particleI < number_particles; particleI++) {
             if ( event.getISTHEP(particleI) != FINAL_STATE ) continue;
-            int pdgid = event.getIDHEP( particleI );
-            double energy = event.getPHEP(particleI,3);
-            if (pdgid == Electron_ID && energy > eE) {
-                eE = energy;
-                electron = particleI;
+
+            int pdgid = event.getIDHEP( particleI ) ;
+            double energy = event.getPHEP(particleI, 3);
+
+            if ( pdgid == Electron_ID && energy > electronEnergy ) {
+                electronI = particleI;
+                electronEnergy = energy;
             }
-            if (pdgid == Positron_ID && energy > pE) {
-                pE = energy;
-                positron = particleI;
+            if ( pdgid == Positron_ID && energy > positronEnergy ) {
+                positronI = particleI;
+                positronEnergy = energy;
             }
         }
-        
-        double init_px = event.getPHEP(electron, 0); 
-        double init_py = event.getPHEP(electron, 1); 
-        double init_pz = event.getPHEP(electron, 2);
-        init_px += event.getPHEP(positron, 0); 
-        init_py += event.getPHEP(positron, 1); 
-        init_pz += event.getPHEP(positron, 2);
 
 
-        double res_px = 0;
-        double res_py = 0;
-        double res_pz = 0;
 
+
+        //these two sets of values are witheld from the total
+        //until it is determined that the particle they derived
+        //their values from was not the initial electron or positron
+        //i.e. that particle's energy is not the highest
+
+
+        //not-detectable  , detectable  : px, py, pz, E, scalar
+        double[] totals = {0,0,0,0};
+
+        //find initial electron and positron
         for (int particleI = 0; particleI < number_particles; particleI++) {
             if ( event.getISTHEP(particleI) != FINAL_STATE ) continue;
-            if ( particleI == electron ) continue;
-            if ( particleI == positron ) continue;
+            if ( particleI == electronI ) continue;
+            if ( particleI == positronI ) continue;
             int pdgid = event.getIDHEP( particleI ) ;
 
-            res_px += event.getPHEP(particleI, 0); 
-            res_py += event.getPHEP(particleI, 1); 
-            res_pz += event.getPHEP(particleI, 2);
+            double mom_x  = event.getPHEP(particleI, 0); 
+            double mom_y  = event.getPHEP(particleI, 1); 
+            double mom_z  = event.getPHEP(particleI, 2);
+            double energy = event.getPHEP(particleI, 3);
+
+            totals[0] += mom_x;
+            totals[1] += mom_y;
+            totals[2] += mom_z;
+            totals[3] += energy;
         }
 
+        double square_px = Math.pow( totals[0], 2 );
+        double square_py = Math.pow( totals[1], 2 );
+        double square_pz = Math.pow( totals[2], 2 );
+        double square_pE = Math.pow( totals[3], 2 );
+        double hadronic_mass_squared = square_pE - square_px - square_py - square_pz;
+        if ( (-1e-9) < hadronic_mass_squared && hadronic_mass_squared < 0 ) hadronic_mass_squared = 0.0;
+        double hadronic_mass = Math.sqrt(hadronic_mass_squared);
+
+
+        double init_mom_x  = event.getPHEP(electronI, 0);
+        double init_mom_y  = event.getPHEP(electronI, 1);
+        init_mom_x  += event.getPHEP(positronI, 0);
+        init_mom_y  += event.getPHEP(positronI, 1);
+        double init_mom_transverse = Math.sqrt(init_mom_x*init_mom_x + init_mom_y*init_mom_y);
+        
+        double hadronic_transverse_momentum = Math.sqrt( square_px + square_py );
+
+        double total_mom_x = init_mom_x + totals[0];
+        double total_mom_y = init_mom_y + totals[1];
+        double total_mom_transverse = Math.sqrt(total_mom_x*total_mom_x + total_mom_y*total_mom_y);
+
+
         try {
-            root.fill("px_res", res_px);
-            root.fill("py_res", res_py);
-            root.fill("px_init", init_px);
-            root.fill("py_init", init_py);
-            root.fill("px_all", init_px + res_px);
-            root.fill("py_all", init_py + res_py);
+            double hadronic_mass_cut = 2.0;
+            if ( hadronic_mass > hadronic_mass_cut ) {
+                root.fill("gt_pt_hadronic", hadronic_transverse_momentum);
+                root.fill("gt_pt_initial", init_mom_transverse);
+                root.fill("gt_pt_all", total_mom_transverse);
+            } else if ( hadronic_mass < hadronic_mass_cut ) {
+                root.fill("lt_pt_hadronic", hadronic_transverse_momentum);
+                root.fill("lt_pt_initial", init_mom_transverse);
+                root.fill("lt_pt_all", hadronic_transverse_momentum + init_mom_transverse);
+            }
+            root.fill("all_pt_hadronic", hadronic_transverse_momentum);
+            root.fill("all_pt_initial", init_mom_transverse);
+            root.fill("all_pt_all", hadronic_transverse_momentum + init_mom_transverse);
 
         } catch(java.io.IOException e) {
             System.out.println(e);
@@ -173,6 +214,7 @@ public class Checksum extends Driver {
         }
 
     }
+
 
 
 
