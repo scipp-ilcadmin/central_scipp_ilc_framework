@@ -66,9 +66,11 @@ public class GammaGamma extends Driver {
             root.init("TH1D","hist1","posz","z position",2000,2000,4000);
             root.init("TH2D","posxy_e","posxy_e","X Y Hit Occupancy Over All Layers", 350, -175, 175, 350, -175, 175);        
             root.init("TH2D","posxy_p","posxy_p","X Y Hit Occupancy Over All Layers", 350, -175, 175, 350, -175, 175);        
-            root.init("TH2D","energy_e","energy_e","Final State Electron Energy", 1000, 0.0, 250.0);
-            root.init("TH2D","energy_p","energy_p","Final State Positron Energy", 1000, 0.0, 250.0);
-            
+            root.init("TH1D","energy_e","energy_e","Final State Electron Energy", 1000, 0.0, 250.0);
+            root.init("TH1D","energy_p","energy_p","Final State Positron Energy", 1000, 0.0, 250.0);
+           
+            root.init("TH2D", "EvT_e", "EvT_e", "Energy v Theta of FS Electron", 1000, -0.02, 0.02, 1000, 0.0, 250.0); 
+            root.init("TH2D", "EvT_p", "EvT_p", "Energy v Theta of FS Positron", 1000, -0.02, 0.02, 1000, 0.0, 250.0); 
         } catch(java.io.IOException e) {
             System.out.println(e);
             System.exit(1);
@@ -108,29 +110,37 @@ public class GammaGamma extends Driver {
                     //get endpint 3-vector
                     pos = p.getEndPoint().v();
                 }
-                catch(java.io.IOException e) {
-                        System.out.println(e);
-                        System.exit(1);
+                catch (RuntimeException ex){
+                    System.out.println(ex);
                 }
                 try{
                     //get momentum 3-vector        
+                    pos = p.getEndPoint().v();
                     mom = p.getMomentum().v();
-                    
+                                                                    
                     //get transformed momentum 4-vector: <p_x, p_y, p_z>
                     tmom = ScippUtils.transform(mom, p.getEnergy());
                 
                     //get PDG id number
                     id = p.getPDGID();
+                   
+                    //calculate theta
+                    double angles[] = PolarCoords.CtoP(tmom[0], tmom[1]);
+                    double rad = angles[0];
+                    double theta = Math.atan(rad/Math.abs(tmom[2]));
                     
+                     
                     //if electron
                     if(id==11){
                         root.fill("posxy_e", pos[0], pos[1]);
-                        root.fill("energy_e", p.getEnergy());
+                        root.fill("energy_e", tmom[3]);
+                        root.fill("EvT_e", theta, tmom[3]);
                     }
                     //if positron
                     else if(id==-11){
                         root.fill("posxy_p", pos[0], pos[1]);
-                        root.fill("energy_p", p.getEnergy());
+                        root.fill("energy_p", tmom[3]);
+                        root.fill("EvT_p", theta, tmom[3]);
                     }
                 }
                 catch(java.io.IOException e) {

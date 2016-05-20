@@ -1,5 +1,5 @@
 /*
- * Checksum.java
+ * aa_lowptAnalysis.java
  *
  * Created on July 11, 2013, 10:45 AM
  * Edited on August 26, 2015, 02:21 AM
@@ -29,7 +29,7 @@ import java.io.FileReader;
 import hep.io.stdhep.*;
 import hep.io.xdr.XDRInputStream;
 
-public class Checksum extends Driver {
+public class AA_lowpt_heatmaps extends Driver {
 
 
     //DEFINE XML FUNCTIONS
@@ -77,16 +77,12 @@ public class Checksum extends Driver {
 
         try {
             root = new Jroot(jrootFile,root_mode);
-            root.init("TH1D", "gt_pt_initial", "gt_pt_initial", "gt_pt_initial", 1000, -10,10);
-            root.init("TH1D", "gt_pt_hadronic", "gt_pt_hadronic", "gt_pt_hadronic", 1000, -10,10);
-            root.init("TH1D", "gt_pt_all", "gt_pt_all", "gt_pt_all", 1000, -10,10);
-            root.init("TH1D", "lt_pt_initial", "lt_pt_initial", "lt_pt_initial", 1000, -10,10);
-            root.init("TH1D", "lt_pt_hadronic", "lt_pt_hadronic", "lt_pt_hadronic", 1000, -10,10);
-            root.init("TH1D", "lt_pt_all", "lt_pt_all", "lt_pt_all", 1000, -10,10);
-            root.init("TH1D", "all_pt_initial", "all_pt_initial", "all_pt_initial", 1000, -10,10);
-            root.init("TH1D", "all_pt_hadronic", "all_pt_hadronic", "all_pt_hadronic", 1000, -10,10);
-            root.init("TH1D", "all_pt_all", "all_pt_all", "all_pt_all", 1000, -10,10);
-            root.init("TH2D", "pt_compare", "pt_compare", "pt_compare", 1000, -10,10, 1000, -10, 10);
+            root.init("TH2D", "S_M_True", "S_M_True", "S_M_True", 80, 0, 20, 80, 0, 20);
+            root.init("TH2D", "S_M_Detectable", "S_M_Detectable", "S_M_Detectable", 80, 0, 20, 80, 0, 20);
+            root.init("TH2D", "V_M_True", "V_M_True", "V_M_True", 80, 0, 20, 80, 0, 20);
+            root.init("TH2D", "V_M_Detectable", "V_M_Detectable", "V_M_Detectable", 80, 0, 20, 80, 0, 20);
+            root.init("TH2D", "V_S_True", "V_S_True", "V_S_True", 80, 0, 20, 80, 0, 20);
+            root.init("TH2D", "V_S_Detectable", "V_S_Detectable", "V_S_Detectable", 80, 0, 20, 80, 0, 20);
 
             //file process loop
             int total = 0;
@@ -142,9 +138,6 @@ public class Checksum extends Driver {
             }
         }
 
-
-
-
         //these two sets of values are witheld from the total
         //until it is determined that the particle they derived
         //their values from was not the initial electron or positron
@@ -152,7 +145,7 @@ public class Checksum extends Driver {
 
 
         //not-detectable  , detectable  : px, py, pz, E, scalar
-        double[] totals = {0,0,0,0};
+        double[][] totals = { {0,0,0,0,0}, {0,0,0,0,0} };
 
         //find initial electron and positron
         for (int particleI = 0; particleI < number_particles; particleI++) {
@@ -166,54 +159,40 @@ public class Checksum extends Driver {
             double mom_z  = event.getPHEP(particleI, 2);
             double energy = event.getPHEP(particleI, 3);
 
-            totals[0] += mom_x;
-            totals[1] += mom_y;
-            totals[2] += mom_z;
-            totals[3] += energy;
+            int is_detectable = check_if_detectable(pdgid,mom_x,mom_y,mom_z);
+            update_totals(totals,mom_x,mom_y,mom_z,energy,is_detectable);
         }
 
-        double square_px = Math.pow( totals[0], 2 );
-        double square_py = Math.pow( totals[1], 2 );
-        double square_pz = Math.pow( totals[2], 2 );
-        double square_pE = Math.pow( totals[3], 2 );
-        double hadronic_mass_squared = square_pE - square_px - square_py - square_pz;
-        if ( (-1e-9) < hadronic_mass_squared && hadronic_mass_squared < 0 ) hadronic_mass_squared = 0.0;
-        double hadronic_mass = Math.sqrt(hadronic_mass_squared);
+        double square_detect_px = Math.pow( totals[1][0], 2 );
+        double square_detect_py = Math.pow( totals[1][1], 2 );
+        double square_detect_pz = Math.pow( totals[1][2], 2 );
+        double square_detect_pE = Math.pow( totals[1][3], 2 );
+
+        double total_detect_scalar = totals[1][4];
+        double total_detect_vector = Math.sqrt( square_detect_px + square_detect_py );
+        double total_detect_mass_squared = square_detect_pE - square_detect_px - square_detect_py - square_detect_pz;
+        if ( (-1e-9) < total_detect_mass_squared && total_detect_mass_squared < 0 ) total_detect_mass_squared = 0.0;
+        double total_detect_mass = Math.sqrt(total_detect_mass_squared);
 
 
-        double init_mom_x = 0.0;
-        double init_mom_y = 0.0;
-        init_mom_x  += event.getPHEP(electronI, 0);
-        init_mom_x  += event.getPHEP(positronI, 0);
-        init_mom_y  += event.getPHEP(electronI, 1);
-        init_mom_y  += event.getPHEP(positronI, 1);
-        //double init_mom_transverse = Math.sqrt(init_mom_x*init_mom_x + init_mom_y*init_mom_y);
-        double init_mom_transverse = init_mom_x;
-        
-        //double hadronic_transverse_momentum = Math.sqrt( square_px + square_py );
-        double hadronic_transverse_momentum = totals[0];
+        double square_true_px = Math.pow( totals[0][0] + totals[1][0], 2 );
+        double square_true_py = Math.pow( totals[0][1] + totals[1][1], 2 );
+        double square_true_pz = Math.pow( totals[0][2] + totals[1][2], 2 );
+        double square_true_pE = Math.pow( totals[0][3] + totals[1][3], 2 );
 
-        double total_mom_x = init_mom_x + totals[0];
-        double total_mom_y = init_mom_y + totals[1];
-        //double total_mom_transverse = Math.sqrt(total_mom_x*total_mom_x + total_mom_y*total_mom_y);
-        double total_mom_transverse = total_mom_x;
-
+        double total_true_scalar = totals[0][4] + totals[1][4];
+        double total_true_vector = Math.sqrt(square_true_px + square_true_py);
+        double total_true_mass_squared = square_true_pE - square_true_px - square_true_py - square_true_pz;
+        if ( (-1e-9) < total_true_mass_squared && total_true_mass_squared < 0 ) total_true_mass_squared = 0.0;
+        double total_true_mass = Math.sqrt(total_true_mass_squared);
 
         try {
-            double hadronic_mass_cut = 2.0;
-            if ( hadronic_mass > hadronic_mass_cut ) {
-                root.fill("gt_pt_hadronic", hadronic_transverse_momentum);
-                root.fill("gt_pt_initial", init_mom_transverse);
-                root.fill("gt_pt_all", total_mom_transverse);
-            } else if ( hadronic_mass < hadronic_mass_cut ) {
-                root.fill("lt_pt_hadronic", hadronic_transverse_momentum);
-                root.fill("lt_pt_initial", init_mom_transverse);
-                root.fill("lt_pt_all", total_mom_transverse);
-            }
-            root.fill("all_pt_hadronic", hadronic_transverse_momentum);
-            root.fill("all_pt_initial", init_mom_transverse);
-            root.fill("all_pt_all", total_mom_transverse);
-            root.fill("pt_compare", init_mom_transverse, hadronic_transverse_momentum);
+            root.fill("S_M_True", total_true_mass, total_true_scalar);
+            root.fill("S_M_Detectable", total_detect_mass, total_detect_scalar);
+            root.fill("V_M_True", total_true_mass, total_true_vector);
+            root.fill("V_M_Detectable", total_detect_mass, total_detect_vector);
+            root.fill("V_S_True", total_true_scalar, total_true_vector);
+            root.fill("V_S_Detectable", total_detect_scalar, total_detect_vector);
 
         } catch(java.io.IOException e) {
             System.out.println(e);
@@ -223,6 +202,28 @@ public class Checksum extends Driver {
     }
 
 
+    private void update_totals( double[][] totals, double mom_x, double mom_y, double mom_z, double energy, int is_detectable ) {
+        totals[is_detectable][0] += mom_x;
+        totals[is_detectable][1] += mom_y;
+        totals[is_detectable][2] += mom_z;
+        totals[is_detectable][3] += energy;
+        totals[is_detectable][4] += Math.sqrt( mom_x*mom_x + mom_y*mom_y );
+    }
+
+
+    private int check_if_detectable( int id, double mom_x, double mom_y, double mom_z ) {
+        boolean is_neutrino = ( id == 12 || id == -12 || 
+                                id == 14 || id == -14 ||
+                                id == 16 || id == -16 ||
+                                id == 18 || id == -18 );
+
+        double mom_total = Math.pow(mom_x*mom_x + mom_y*mom_y + mom_z*mom_z,0.5);
+        double cos_theta = mom_z / mom_total;
+        boolean is_forward = ( Math.abs(cos_theta) > 0.9 );
+
+        //return 0 (is not detectable) if particle is neutrino or is forward
+        return ( is_neutrino || is_forward ) ? 0 : 1;
+    }
 
 
     // Generator Statuses

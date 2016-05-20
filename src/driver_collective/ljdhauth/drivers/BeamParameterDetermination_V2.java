@@ -10,7 +10,7 @@
  * Thrust and thrust axis from baricenter, total
  * energy deposited
  * 
- * Works in progress: 
+ * Works in progress: Fix data output for easier analysis
  * To start: Mode-based center, thrust, thrust axis
  *
  * Basis driver:
@@ -97,23 +97,36 @@ public class BeamParameterDetermination_V2 extends Driver {
         try {
             root.end();
 	    //Prints involving all events:
-	    System.out.println("Over all events, total energy deposited = " + 
+	    System.out.println("Over all events, Total energy deposited (P) = " + 
 			       energyDepOverEvents +" GeV");
 	    System.out.println("Average per event = " +energyDepOverEvents/numberOfEvents);
 	    //for(Integer i: layersHit){System.out.println(i);}	    
-	    System.out.println("Array of x_avgs (P BCal): " + x_avgs_pos.toString());
-	    System.out.println("Array of y_avgs (P BCal): " + y_avgs_pos.toString());
-	    System.out.println("Array of x_avgs (N BCal): " + x_avgs_neg.toString());
-	    System.out.println("Array of y_avgs (N BCal): " + y_avgs_neg.toString());
-		    
-	    System.out.println("Array of LR assyms for positive BeamCal:" + LR_asym_pos.toString());
-	    System.out.println("Array of TD assyms for positive BeamCal:" + TD_asym_pos.toString());
-	    System.out.println("Array of LR assyms for negative BeamCal:" + LR_asym_neg.toString());
-	    System.out.println("Array of TD assyms for negative BeamCal:" + TD_asym_neg.toString());
+
+	    //Arrays of observables, for different events.
+	    System.out.println("E deposited (P): " + eDep_p.toString());
+	    System.out.println("E deposited (N): " + eDep_n.toString());
+
+	    System.out.println("meanDepth (P): " + meanDepth_p.toString());
+	    System.out.println("meanDepth (N): " + meanDepth_n.toString());
 	    
-	    System.out.println("Array of thrust values for positive BeamCal:" +
+	    System.out.println("x_avgs (P): " + x_avgs_pos.toString());
+	    System.out.println("y_avgs (P): " + y_avgs_pos.toString());
+	    System.out.println("x_avgs (N): " + x_avgs_neg.toString());
+	    System.out.println("y_avgs (N): " + y_avgs_neg.toString());
+		    
+	    System.out.println("LR asyms (P): " + LR_asym_pos.toString());
+	    System.out.println("TD asyms (P): " + TD_asym_pos.toString());
+	    System.out.println("LR asyms (N): " + LR_asym_neg.toString());
+	    System.out.println("TD asyms (N): " + TD_asym_neg.toString());
+
+	    System.out.println("ThrustAxes_x (P): " + thrustAxis_x_p.toString());
+	    System.out.println("ThrustAxes_y (P): " + thrustAxis_y_p.toString());
+	    System.out.println("ThrustAxes_x (N): " + thrustAxis_x_n.toString());
+	    System.out.println("ThrustAxes_y (N): " + thrustAxis_y_n.toString());
+
+	    System.out.println("Thrust values (P):" +
 			       thrust_pos.toString());
-	    System.out.println("Array of thrust values for negative BeamCal:" + 
+	    System.out.println("Thrust values (N): " +
 			       thrust_neg.toString());
 	    System.out.println("*************************************************************" + 
 			       "*************\n");
@@ -137,33 +150,53 @@ public class BeamParameterDetermination_V2 extends Driver {
     double sum_TD_Hits = 0;
 
     //Compute mean shower depth (NOTE: Layers start at 1, instead of the usual 0 here)
-    public double[] compute_meanDepth(List<SimCalorimeterHit> hits){
+    public double[][] compute_meanDepth(List<SimCalorimeterHit> hits){
 	
 	double[] eDep = new double[51]; int[] hitLayerArray = new int[51];
-	double energyDepth_productSum = 0; double energyDepthL_productSum = 0; // sum of the products of energy*depth
-	double sumOfEnergy = 0;	int hitnum = 0;
+	//Positive Bcal variables
+	double energyDepth_productSum_p = 0; double energyDepthL_productSum_p = 0; // sum of the products of energy*depth
+	double sumOfEnergy_p = 0; int hitnum_p = 0;
+	//Negative Bcal variables
+	double energyDepth_productSum_n = 0; double energyDepthL_productSum_n = 0; // sum of the products of energy*depth
+	double sumOfEnergy_n = 0; int hitnum_n = 0;
+	
 	
 	for(SimCalorimeterHit hit: hits){	    
 	    double[] vec = hit.getPosition();
 	    double[] transformed_Vec = PolarCoords.ZtoBeamOut(vec[0],vec[1],vec[2]);
 	    double energy = hit.getRawEnergy();
 	    if(vec[2] > 0){
-		sumOfEnergy += energy;
+		sumOfEnergy_p += energy;
 		//eDep[hit.getLayerNumber()+1] += hit.getRawEnergy(); //hitLayerArray[hit.getLayerNumber()+1]++;
-		energyDepth_productSum += energy*transformed_Vec[2]; // Does this change if don't trans-vec?
-		energyDepthL_productSum += energy*(hit.getLayerNumber()+1);
-	    }else{/*working with negative hits?*/}
+		energyDepth_productSum_p += energy*transformed_Vec[2]; // Does this change if don't trans-vec?
+		energyDepthL_productSum_p += energy*(hit.getLayerNumber()+1);
+	    }else{/*working with negative hits*/
+                sumOfEnergy_n += energy;
+                //eDep[hit.getLayerNumber()+1] += hit.getRawEnergy(); //hitLayerArray[hit.getLayerNumber()+1]++;
+		energyDepth_productSum_n += energy*transformed_Vec[2]; // Does this change if don't trans-vec?
+		energyDepthL_productSum_n += energy*(hit.getLayerNumber()+1);
+
+	    }
 	}
 	//System.out.println("Hits by layer" + Arrays.toString(hitLayerArray));
 	
-	meanDepth_Z = energyDepth_productSum/sumOfEnergy;
-	meanDepth_Layer = energyDepthL_productSum/sumOfEnergy;
-	double[] depth = {meanDepth_Z, meanDepth_Layer};
+	double meanDepth_Z_p = energyDepth_productSum_p/sumOfEnergy_p;
+	double meanDepth_Layer_p = energyDepthL_productSum_p/sumOfEnergy_p;
+	
+	double meanDepth_Z_n = energyDepth_productSum_n/sumOfEnergy_n;
+	double meanDepth_Layer_n = energyDepthL_productSum_n/sumOfEnergy_n;
+
+	double[] depth_L_E_pos = {meanDepth_Z_p, meanDepth_Layer_p, sumOfEnergy_p};
+	double[] depth_L_E_neg = {meanDepth_Z_n, meanDepth_Layer_n, sumOfEnergy_n};
+	
+	double[][] depth_L_E = {depth_L_E_pos,depth_L_E_neg};
 
 	//Obligatory post-method prints!
-	System.out.println("E total deposited" + sumOfEnergy);	
-	System.out.println("Mean depth, Layer is (" + meanDepth_Z + ", " + meanDepth_Layer + ")");	
-	return depth;
+	System.out.println("E total deposited (P): " + sumOfEnergy_p);
+	System.out.println("E total deposited (N): " + sumOfEnergy_n);
+	System.out.println("Mean depth, Layer (P) is (" + meanDepth_Z_p + ", " + meanDepth_Layer_p + ")");	
+	System.out.println("Mean depth, Layer (N) is (" + meanDepth_Z_n + ", " + meanDepth_Layer_n + ")");	
+	return depth_L_E;
     }
 
     //Computes Baricenter AND assymetries for positive and negative BCal
@@ -229,7 +262,7 @@ public class BeamParameterDetermination_V2 extends Driver {
     //public void compute_Thrust(List<SimCalorimeterHit> hits, EventHeader event) 
     // throws java.io.IOException{
     
-    public void compute_Thrust(List<SimCalorimeterHit> hits, EventHeader event,double[] loc)
+    public double[][] compute_Thrust(List<SimCalorimeterHit> hits, EventHeader event,double[] loc)
 	throws java.io.IOException{	
 	
 	//****Testing****//
@@ -281,19 +314,25 @@ public class BeamParameterDetermination_V2 extends Driver {
 	thrust_neg.add(hopefulthrust_Ebased_n.x());
 	
 	//Printing stuff
-	System.out.println("For the positive BeamCal ");
-	System.out.println("The total hits on positive BCAL:" + hit_c_pos);
-	System.out.println("The thrust from hits(E-weighted) is " + hopefulthrust_Ebased_p.x());
-	System.out.println("with a thrustAxis: " + thrustAxis_hits_p);
+	System.out.println("Positive BeamCal ");
+	System.out.println("Total hits:" + hit_c_pos);
+	System.out.println("Thrust from hits(E-weighted) is " + hopefulthrust_Ebased_p.x());
+	System.out.println("ThrustAxis: " + thrustAxis_hits_p);
 	
 	System.out.println("-------------------------");
 	
 
-        System.out.println("For the negative BeamCal");
-	System.out.println("The total hits on negative BCAL:" + hit_c_neg);
-        System.out.println("The thrust from hits(E-weighted) is " + hopefulthrust_Ebased_n.x());
-	System.out.println("with a thrustAxis: " + thrustAxis_hits_n.toString());
+        System.out.println("Negative BeamCal");
+	System.out.println("Total hits: " + hit_c_neg);
+        System.out.println("Thrust from hits(E-weighted) is " + hopefulthrust_Ebased_n.x());
+	System.out.println("ThrustAxis: " + thrustAxis_hits_n.toString());
+	//Change from Hep3Vector to array
+	double[] thrustAxis_p = {thrustAxis_hits_p.x(),thrustAxis_hits_p.y(),thrustAxis_hits_p.z()};
+	double[] thrustAxis_n = {thrustAxis_hits_n.x(),thrustAxis_hits_n.y(),thrustAxis_hits_n.z()};
+
+	double[][] thrustAxes = {thrustAxis_p,thrustAxis_n};
 	
+	return thrustAxes;
 	/*
 	//Thrust quantities computed from final state particles(traditional jets?) were here, check V0
 	...
@@ -302,9 +341,9 @@ public class BeamParameterDetermination_V2 extends Driver {
 	}
     
 
-    //Observables//
-    public double meanDepth_Z = 0;
-    public double meanDepth_Layer = 0;
+    //Observables//(These are function-wide variables, for the moment)
+    //public double meanDepth_Z = 0;
+    //public double meanDepth_Layer = 0;
 
 
     //PROCESS FUNCTION
@@ -328,7 +367,7 @@ public class BeamParameterDetermination_V2 extends Driver {
 	double maxPixelEnergy = 0;
 	int layerOfMaxE = 0;
 	try {	    
-	    double[] depth = compute_meanDepth(hits);
+
 	    double[][] bari_asym = compute_Baricenter(hits, event);
 	    double loc[] = bari_asym[0];    //Baricenters!
 	    double[] asyms = bari_asym[1];  //Assymetries!
@@ -342,8 +381,23 @@ public class BeamParameterDetermination_V2 extends Driver {
 	    TD_asym_pos.add(asyms[1]);
 	    LR_asym_neg.add(asyms[2]);
 	    TD_asym_neg.add(asyms[3]);
+
+	    //WORK IN PROGRESS AHEAD//
+	    double[][] thrustAxes = compute_Thrust(hits,event, loc);
+	    thrustAxis_x_p.add(thrustAxes[0][0]);
+	    thrustAxis_y_p.add(thrustAxes[0][1]);
+	    thrustAxis_x_n.add(thrustAxes[1][0]);
+	    thrustAxis_y_n.add(thrustAxes[1][1]);
 	    
-	    compute_Thrust(hits,event, loc);
+	    double[][] depth_L_E = compute_meanDepth(hits); //[[mDepth_z_p,mDepth_L_p,sumOfE_p],[negativs]]
+	    //Add meanDepths for this event to lists
+	    meanDepth_p.add(depth_L_E[0][0]);
+	    meanDepth_n.add(depth_L_E[1][0]);
+	    eDep_p.add(depth_L_E[0][2]);
+	    eDep_n.add(depth_L_E[1][2]);
+	    //WORK IN PROGRESS ZONE ENDS HERE//
+	    
+
 	    // loop through the List of <SimCalHits..> Check V0 if you want this.
 	    //********Power lied here. See (old) Graveyard. {4/12/16}
 	    //c. 03/31/16
@@ -378,6 +432,17 @@ public class BeamParameterDetermination_V2 extends Driver {
     private double energyDepOverEvents = 0;
 
     //Beam Parameter Observable
+    private List<Double> thrustAxis_x_p = new ArrayList<Double>();
+    private List<Double> thrustAxis_x_n = new ArrayList<Double>();
+    private List<Double> thrustAxis_y_p = new ArrayList<Double>();
+    private List<Double> thrustAxis_y_n = new ArrayList<Double>();
+
+    private List<Double> eDep_p = new ArrayList<Double>();
+    private List<Double> eDep_n = new ArrayList<Double>();
+
+    private List<Double> meanDepth_p = new ArrayList<Double>();
+    private List<Double> meanDepth_n = new ArrayList<Double>();
+
     private List<Double> x_avgs_pos = new ArrayList<Double>();
     private List<Double> y_avgs_pos = new ArrayList<Double>();
     private List<Double> x_avgs_neg = new ArrayList<Double>();

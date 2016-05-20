@@ -187,16 +187,13 @@ public class Checksum extends Driver {
         init_mom_x  += event.getPHEP(positronI, 0);
         init_mom_y  += event.getPHEP(electronI, 1);
         init_mom_y  += event.getPHEP(positronI, 1);
-        //double init_mom_transverse = Math.sqrt(init_mom_x*init_mom_x + init_mom_y*init_mom_y);
-        double init_mom_transverse = init_mom_x;
+        double init_mom_transverse = Math.sqrt(init_mom_x*init_mom_x + init_mom_y*init_mom_y);
         
-        //double hadronic_transverse_momentum = Math.sqrt( square_px + square_py );
-        double hadronic_transverse_momentum = totals[0];
+        double hadronic_transverse_momentum = Math.sqrt( square_px + square_py );
 
         double total_mom_x = init_mom_x + totals[0];
         double total_mom_y = init_mom_y + totals[1];
-        //double total_mom_transverse = Math.sqrt(total_mom_x*total_mom_x + total_mom_y*total_mom_y);
-        double total_mom_transverse = total_mom_x;
+        double total_mom_transverse = Math.sqrt(total_mom_x*total_mom_x + total_mom_y*total_mom_y);
 
 
         try {
