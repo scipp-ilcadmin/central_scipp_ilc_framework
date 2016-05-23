@@ -137,7 +137,7 @@ public class BeamcalEnergyDep_c extends Driver {
     public double getRawPower(double T){
 	double I = getCurrent(T);
 	double biasVoltage = 600;
-	double s = 40;// scale factor to convert to pwr/cm^2 
+	double s = 40;// scale factor to convert to pwr/cm^2
 	return s*biasVoltage*I;
     }
     // Returns power draw in mW for a pixel, given 
@@ -222,7 +222,7 @@ public class BeamcalEnergyDep_c extends Driver {
 			   "on layer " + layerOfMaxE);
 	energyDepOverEvents += sumOfEnergy;
 	System.out.println("Highest energy deposited on a pixel was " + maxPixelEnergy +
-			   "on layer " + layerOfMaxE);
+			   " on layer " + layerOfMaxE);
 	System.out.println("Radiation dosage for 3 years on this pixel is thus  " +
 			   radDosage(maxPixelEnergy));
 	System.out.println("Power Drawn over this event, per layer :" + Arrays.toString(power));
@@ -233,7 +233,7 @@ public class BeamcalEnergyDep_c extends Driver {
     /*here all the classwide variables are declared*/
     private int numberOfEvents = 10; //This is used to get averages per event.
     private int eventNumber;
-    private double runTemp = 15;
+    private double runTemp = 0;
     private boolean wholeBcal = true; //true if we want plots for the whole
     private boolean layersBcal = true; //true if we want plots for all layers
     private double energyDepOverEvents = 0;
