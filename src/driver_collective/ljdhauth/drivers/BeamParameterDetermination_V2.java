@@ -10,16 +10,16 @@
  * Thrust and thrust axis from baricenter, total
  * energy deposited
  * 
- * Works in progress: Fix data output for easier analysis
+ * Works in progress: Fix data output for easier analysis (sort of done)
  * To start: Mode-based center, thrust, thrust axis
  *
  * Basis driver:
  * --> BeamcalEnergyDep.java
  *
  * Last edited on May 8, 2016, 3:54 PM
- * @Author: Luc d'Hauthuille 
+ * @Author: Luc d'Hauthuille, ljdhauth@ucsc.edu 
  *
- * ~ Based on EventAnalysis written by Christopher Milke et al. ~
+ * ~ Template based on EventAnalysis written by Christopher Milke et al. ~
  */
 
 package scipp_ilc.drivers;
@@ -135,6 +135,38 @@ public class BeamParameterDetermination_V2 extends Driver {
 	    System.exit(1);
         }
     }
+
+
+
+    //************** STATS *****************//
+    static double[] rms_error(ArrayList<Double> observableList, double mean){
+	double diffMeanSquared = 0;
+	int count = 0;
+	for(Double obs: observableList){
+	    diffMeanSquared += (obs - mean)*(obs - mean);
+	    count++;
+	}
+	double rms = Math.sqrt(diffMeanSquared/(count-1)); //Take the sqrt of (diffMeanSquared/9) => rms
+	double[] rms_error = {rms, rms/(Math.sqrt(count))}; 
+	return rms_error; // returns the rms and error
+    }
+
+    static public double[] calculateAverage(ArrayList<Double> observableList){
+	double sumOfObs = 0;
+	int count = 0;
+	for(Double obs: observableList){
+	    sumOfObs += obs;
+	    count++;
+	}
+	double mean = sumOfObs/count;
+	double[] rms_error = rms_error(observableList, mean);
+	double[] mean_RMS_error = {mean,rms_error[0], rms_error[1]};
+	return mean_RMS_error; //returns the mean, the rms, and the error 
+    }
+    //************* END STATS *****************//
+
+
+
 
     //******************************Beam Parameter Functions***************************//
 
@@ -310,8 +342,10 @@ public class BeamParameterDetermination_V2 extends Driver {
 	Hep3Vector thrustAxis_hits_n = es_hits_neg.thrustAxis();
         BasicHep3Vector hopefulthrust_Ebased_n = es_hits_neg.thrust();
 	
-	thrust_pos.add(hopefulthrust_Ebased_p.x()); //Print thrust value
-	thrust_neg.add(hopefulthrust_Ebased_n.x());
+	//The following is antiquated. Nowadays, observables are always added to their
+	//global list in the process function...
+	//thrust_pos.add(hopefulthrust_Ebased_p.x()); //Print thrust value
+	//thrust_neg.add(hopefulthrust_Ebased_n.x());
 	
 	//Printing stuff
 	System.out.println("Positive BeamCal ");
@@ -329,15 +363,14 @@ public class BeamParameterDetermination_V2 extends Driver {
 	//Change from Hep3Vector to array
 	double[] thrustAxis_p = {thrustAxis_hits_p.x(),thrustAxis_hits_p.y(),thrustAxis_hits_p.z()};
 	double[] thrustAxis_n = {thrustAxis_hits_n.x(),thrustAxis_hits_n.y(),thrustAxis_hits_n.z()};
-
-	double[][] thrustAxes = {thrustAxis_p,thrustAxis_n};
+	double[] thrusts = {hopefulthrust_Ebased_p.x(),hopefulthrust_Ebased_n.x()};
+	double[][] thrustAxes = {thrustAxis_p, thrustAxis_n, thrusts};//thrust axis in pos, neg and both thrusts 
 	
 	return thrustAxes;
-	/*
-	//Thrust quantities computed from final state particles(traditional jets?) were here, check V0
-	...
+
+        //Thrust quantities computed from final state particles(traditional jets?) were here, check V0
 	//System.out.println("The number of f_Particles in this event is " + countfinalParticles);
-	*/
+	
 	}
     
 
@@ -368,9 +401,11 @@ public class BeamParameterDetermination_V2 extends Driver {
 	int layerOfMaxE = 0;
 	try {	    
 
+	    //Event-wide obserables are added to lists here
 	    double[][] bari_asym = compute_Baricenter(hits, event);
 	    double loc[] = bari_asym[0];    //Baricenters!
 	    double[] asyms = bari_asym[1];  //Assymetries!
+	    //Add observables
 	    //Add energy-weighted avgs from this event to lists
 	    x_avgs_pos.add(loc[0]);
 	    y_avgs_pos.add(loc[1]);
@@ -381,22 +416,37 @@ public class BeamParameterDetermination_V2 extends Driver {
 	    TD_asym_pos.add(asyms[1]);
 	    LR_asym_neg.add(asyms[2]);
 	    TD_asym_neg.add(asyms[3]);
-
-	    //WORK IN PROGRESS AHEAD//
 	    double[][] thrustAxes = compute_Thrust(hits,event, loc);
 	    thrustAxis_x_p.add(thrustAxes[0][0]);
 	    thrustAxis_y_p.add(thrustAxes[0][1]);
 	    thrustAxis_x_n.add(thrustAxes[1][0]);
-	    thrustAxis_y_n.add(thrustAxes[1][1]);
-	    
+	    thrustAxis_y_n.add(thrustAxes[1][1]);	    
 	    double[][] depth_L_E = compute_meanDepth(hits); //[[mDepth_z_p,mDepth_L_p,sumOfE_p],[negativs]]
 	    //Add meanDepths for this event to lists
 	    meanDepth_p.add(depth_L_E[0][0]);
 	    meanDepth_n.add(depth_L_E[1][0]);
 	    eDep_p.add(depth_L_E[0][2]);
 	    eDep_n.add(depth_L_E[1][2]);
-	    //WORK IN PROGRESS ZONE ENDS HERE//
 	    
+
+	    //WORK IN PROGRESS (A)//	    
+
+	    thrust_pos.add(thrustAxes[2][0]);
+	    thrust_neg.add(thrustAxes[2][1]);
+
+	    //PROGRESS (A) ENDS HERE//
+	    
+	    //WORK IN PROGRESS (B)//	    
+
+	    //Now take averages, since every n events, we change the scenario.
+	    //i.e. For Scenarios 1-4, 10 events for Scenario 1, 10 for S2...
+	    
+	    /*for(double[] o: observableList){
+
+	      }*/
+	    
+
+	    //PROGRESS (B) ENDS HERE//
 
 	    // loop through the List of <SimCalHits..> Check V0 if you want this.
 	    //********Power lied here. See (old) Graveyard. {4/12/16}
@@ -407,6 +457,7 @@ public class BeamParameterDetermination_V2 extends Driver {
         }
 	
 	// Post-processing print statements:
+
         System.out.println("finished event "+ ++eventNumber);        
 	System.out.println("Total energy deposited across BeamCal: " + sumOfEnergy);
 	energyDepOverEvents += sumOfEnergy;
@@ -431,7 +482,7 @@ public class BeamParameterDetermination_V2 extends Driver {
     private boolean layersBcal = true;
     private double energyDepOverEvents = 0;
 
-    //Beam Parameter Observable
+    //Beam Parameter, Event-Based Observable
     private List<Double> thrustAxis_x_p = new ArrayList<Double>();
     private List<Double> thrustAxis_x_n = new ArrayList<Double>();
     private List<Double> thrustAxis_y_p = new ArrayList<Double>();
@@ -456,12 +507,39 @@ public class BeamParameterDetermination_V2 extends Driver {
     private List<Double> thrust_pos = new ArrayList<Double>();
     private List<Double> thrust_neg = new ArrayList<Double>();
 
+    //Beam Parameter, Averaged Observables, over n events
+    private List<Double> eDep_pList = new ArrayList<Double>();
+    private List<Double> eDep_nList = new ArrayList<Double>();
+
+    private List<Double> meanDepth_pList = new ArrayList<Double>();
+    private List<Double> meanDepth_nList = new ArrayList<Double>();
+
+    private List<Double> x_avgs_posList = new ArrayList<Double>();
+    private List<Double> y_avgs_posList = new ArrayList<Double>();
+    private List<Double> x_avgs_negList = new ArrayList<Double>();
+    private List<Double> y_avgs_negList = new ArrayList<Double>();
+
+    private List<Double> LR_asym_posList = new ArrayList<Double>();
+    private List<Double> TD_asym_posList = new ArrayList<Double>();
+    private List<Double> LR_asym_negList = new ArrayList<Double>();
+    private List<Double> TD_asym_negList = new ArrayList<Double>();
+
+    private List<Double> thrust_posList = new ArrayList<Double>();
+    private List<Double> thrust_negList = new ArrayList<Double>();
+    /*
+    private List<Double> thrustAxis_x_p = new ArrayList<Double>();
+    private List<Double> thrustAxis_x_n = new ArrayList<Double>();
+    private List<Double> thrustAxis_y_p = new ArrayList<Double>();
+    private List<Double> thrustAxis_y_n = new ArrayList<Double>();
+    */
+    
+
 
     private HashSet<Integer> layersHit = new HashSet<Integer>();
     private HashSet<Integer> layersHit2 = new HashSet<Integer>();
     //xml derived variables
     private String jrootFile = "";
-
+ 
     //variables for jroot file construction and background/signal file reading
     private LCIOFileManager lcioFileMNGR = new LCIOFileManager();
     private Jroot root;
