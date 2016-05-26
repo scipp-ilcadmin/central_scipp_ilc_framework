@@ -99,10 +99,12 @@ public class BeamParameterDetermination_V2 extends Driver {
 	    //Prints involving all events:
 	    System.out.println("Over all events, Total energy deposited (P) = " + 
 			       energyDepOverEvents +" GeV");
-	    System.out.println("Average per event = " +energyDepOverEvents/numberOfEvents);
-	    //for(Integer i: layersHit){System.out.println(i);}	    
+	    //System.out.println("Average per event = " +energyDepOverEvents/numberOfEvents);
+	    
+//for(Integer i: layersHit){System.out.println(i);}	    
 
 	    //Arrays of observables, for different events.
+	    
 	    System.out.println("E deposited (P): " + eDep_p.toString());
 	    System.out.println("E deposited (N): " + eDep_n.toString());
 
@@ -113,7 +115,7 @@ public class BeamParameterDetermination_V2 extends Driver {
 	    System.out.println("y_avgs (P): " + y_avgs_pos.toString());
 	    System.out.println("x_avgs (N): " + x_avgs_neg.toString());
 	    System.out.println("y_avgs (N): " + y_avgs_neg.toString());
-		    
+	    	    
 	    System.out.println("LR asyms (P): " + LR_asym_pos.toString());
 	    System.out.println("TD asyms (P): " + TD_asym_pos.toString());
 	    System.out.println("LR asyms (N): " + LR_asym_neg.toString());
@@ -139,7 +141,7 @@ public class BeamParameterDetermination_V2 extends Driver {
 
 
     //************** STATS *****************//
-    static double[] rms_error(ArrayList<Double> observableList, double mean){
+    static double[] rms_error(List<Double> observableList, double mean){
 	double diffMeanSquared = 0;
 	int count = 0;
 	for(Double obs: observableList){
@@ -151,7 +153,7 @@ public class BeamParameterDetermination_V2 extends Driver {
 	return rms_error; // returns the rms and error
     }
 
-    static public double[] calculateAverage(ArrayList<Double> observableList){
+    static public double[] calculateAverage(List<Double> observableList){
 	double sumOfObs = 0;
 	int count = 0;
 	for(Double obs: observableList){
@@ -283,8 +285,10 @@ public class BeamParameterDetermination_V2 extends Driver {
 			   x_avg_pos + ", " + y_avg_pos);
 	System.out.println("X_avg, Y_avg for negative BeamCal is " + 
 			   x_avg_neg + ", " + y_avg_neg);
-	//System.out.println("DEBUGGING assymetries: X_sum_pos, xMag_sum_pos is" + 
-	//		   x_sum_pos + ", " + xMag_sum_pos);
+	System.out.println("Asymmetries (+) LR/TD: " + 
+			   LR_asym_pos + ", " + TD_asym_pos);
+	System.out.println("Asymmetries (-) LR/TD: " +
+			   LR_asym_neg + ", " + TD_asym_neg);
 
 	return bari_asym;
 	
@@ -326,8 +330,10 @@ public class BeamParameterDetermination_V2 extends Driver {
 		//if(hit_c_neg % 1000 == 0) root.proc("printf(\"test00\");\n"); //overLimit = true;
 		if(hit_c_neg % 200000 == 0) root.proc("f.Write();\n"); //overLimit = true;
 		//if (overLimit==false){}
-		root.fill("hit_vectors_Mean",(a.x() - x_avg_neg), (a.y() - y_avg_neg), 
-			  Energy);
+		
+		//Wanna plot?
+		//root.fill("hit_vectors_Mean",(a.x() - x_avg_neg), (a.y() - y_avg_neg), 
+		//	  Energy);
 				
 		a.setV(Energy*(a.x() - x_avg_neg), Energy*(a.y() - y_avg_neg),0);
                 vecs_fromMean_neg.add(a);
@@ -395,6 +401,7 @@ public class BeamParameterDetermination_V2 extends Driver {
 	int check_layer = 0;
         boolean reject_negative = true; // reject negative beamcal?
         int hit_count = 0;
+	eventNumber++;
 	boolean funcs_only = true;
 	double sumOfEnergy = 0;
 	double maxPixelEnergy = 0;
@@ -440,11 +447,98 @@ public class BeamParameterDetermination_V2 extends Driver {
 
 	    //Now take averages, since every n events, we change the scenario.
 	    //i.e. For Scenarios 1-4, 10 events for Scenario 1, 10 for S2...
-	    
-	    /*for(double[] o: observableList){
+	    if(eventNumber % numberOfEventstoAvg == 0){
+		System.out.println("--------~?----------");
+		System.out.println("*** Averaged observables ***");
 
-	      }*/
-	    
+		eDep_pList.add(calculateAverage(eDep_p)[0]); 
+		System.out.println(eDep_p.toString()); System.out.println("Energy Dep (+): " + eDep_pList.toString());
+		eDep_pError.add(calculateAverage(eDep_p)[2]);
+                System.out.println("Errors: " + eDep_pError.toString());
+                eDep_p.clear();
+
+		eDep_nList.add(calculateAverage(eDep_n)[0]);
+                System.out.println(eDep_n.toString()); System.out.println("Energy Dep (-): " + eDep_nList.toString());
+		eDep_nError.add(calculateAverage(eDep_n)[2]);
+                System.out.println("Errors: " + eDep_nError.toString());
+                eDep_n.clear();
+
+		meanDepth_pList.add(calculateAverage(meanDepth_p)[0]);
+		System.out.println(meanDepth_p.toString()); System.out.println("mean Depth (+): " + meanDepth_pList.toString());
+		meanDepth_pError.add(calculateAverage(meanDepth_p)[2]);
+                System.out.println("Errors: " + meanDepth_pError.toString());
+		meanDepth_p.clear();
+
+                meanDepth_nList.add(calculateAverage(meanDepth_n)[0]);
+		System.out.println(meanDepth_n.toString()); System.out.println("mean Depth (-): " + meanDepth_nList.toString());
+		meanDepth_nError.add(calculateAverage(meanDepth_n)[2]);
+                System.out.println("Errors: " + meanDepth_nError.toString());
+		meanDepth_n.clear();
+
+		thrust_posList.add(calculateAverage(thrust_pos)[0]);
+                System.out.println(thrust_pos.toString()); System.out.println("Thrust Value (+): " + thrust_posList.toString());
+		thrust_posError.add(calculateAverage(thrust_pos)[2]);
+                System.out.println("Errors: " + thrust_posError.toString());
+		thrust_pos.clear();
+
+		thrust_negList.add(calculateAverage(thrust_neg)[0]);
+                System.out.println(thrust_neg.toString()); System.out.println("Thrust Value (-): " + thrust_negList.toString());
+		thrust_negError.add(calculateAverage(thrust_neg)[2]);
+                System.out.println("Errors: " + thrust_negError.toString());
+                thrust_neg.clear();
+
+
+		x_avgs_posList.add(calculateAverage(x_avgs_pos)[0]);
+                System.out.println(x_avgs_pos.toString()); System.out.println("x_avg (+): " + x_avgs_posList.toString());
+		x_avgs_posError.add(calculateAverage(x_avgs_pos)[2]);
+                System.out.println("Errors: " + x_avgs_posError.toString());
+                x_avgs_pos.clear();
+
+		y_avgs_posList.add(calculateAverage(y_avgs_pos)[0]);
+		System.out.println(y_avgs_pos.toString()); System.out.println("y_avg (+): " + y_avgs_posList.toString());
+		y_avgs_posError.add(calculateAverage(y_avgs_pos)[2]);
+                System.out.println("Errors: " + y_avgs_posError.toString());
+		y_avgs_pos.clear();
+
+		x_avgs_negList.add(calculateAverage(x_avgs_neg)[0]);
+		System.out.println(x_avgs_neg.toString()); System.out.println("x_avg (-): " + x_avgs_negList.toString());
+		x_avgs_negError.add(calculateAverage(x_avgs_neg)[2]);
+                System.out.println("Errors: " + x_avgs_negError.toString());
+		x_avgs_neg.clear();
+		
+                y_avgs_negList.add(calculateAverage(y_avgs_neg)[0]);
+		System.out.println(y_avgs_neg.toString()); System.out.println("y_avg (-): " + y_avgs_negList.toString());
+		y_avgs_negError.add(calculateAverage(y_avgs_neg)[2]);
+                System.out.println("Errors: " + y_avgs_negError.toString());
+		y_avgs_neg.clear();
+
+		LR_asym_posList.add(calculateAverage(LR_asym_pos)[0]);
+		System.out.println(LR_asym_pos.toString()); System.out.println("LR asym (+): " + LR_asym_posList.toString());
+		LR_asym_posError.add(calculateAverage(LR_asym_pos)[2]);
+                System.out.println("Errors: " + LR_asym_posError.toString());
+		LR_asym_pos.clear();
+
+		TD_asym_posList.add(calculateAverage(TD_asym_pos)[0]);
+		System.out.println(TD_asym_pos.toString()); System.out.println("TD asym (+): " + TD_asym_posList.toString());
+		TD_asym_posError.add(calculateAverage(TD_asym_pos)[2]);
+                System.out.println("Errors: " + TD_asym_posError.toString());
+		TD_asym_pos.clear();
+		
+		LR_asym_negList.add(calculateAverage(LR_asym_neg)[0]);
+		System.out.println(LR_asym_neg.toString()); System.out.println("LR asym (-): " + LR_asym_negList.toString());
+		LR_asym_negError.add(calculateAverage(LR_asym_neg)[2]);
+                System.out.println("Errors: " + LR_asym_negError.toString());
+                LR_asym_neg.clear();
+
+		TD_asym_negList.add(calculateAverage(TD_asym_neg)[0]);
+		System.out.println(TD_asym_neg.toString()); System.out.println("TD asym (-): " + TD_asym_negList.toString());
+		TD_asym_negError.add(calculateAverage(TD_asym_neg)[2]);
+		System.out.println("Errors: " + TD_asym_negError.toString());
+                TD_asym_neg.clear();
+		
+		System.out.println("--------~?----------");
+
+	    }
 
 	    //PROGRESS (B) ENDS HERE//
 
@@ -458,7 +552,7 @@ public class BeamParameterDetermination_V2 extends Driver {
 	
 	// Post-processing print statements:
 
-        System.out.println("finished event "+ ++eventNumber);        
+        System.out.println("finished event "+ eventNumber);        
 	System.out.println("Total energy deposited across BeamCal: " + sumOfEnergy);
 	energyDepOverEvents += sumOfEnergy;
 	System.out.println("******************************************" + 
@@ -473,10 +567,14 @@ public class BeamParameterDetermination_V2 extends Driver {
 	*/
     }//End Process
     
+
+
+
+
     
     /*here all the classwide variables are declared*/
-    private int numberOfEvents = 10; //This is used to get averages per event.
-    private int eventNumber;
+    private int numberOfEventstoAvg = 8; //This is used to get average over some event.
+    private int eventNumber=0;
     private double runTemp = 15;
     private boolean wholeBcal = true;
     private boolean layersBcal = true;
@@ -507,25 +605,40 @@ public class BeamParameterDetermination_V2 extends Driver {
     private List<Double> thrust_pos = new ArrayList<Double>();
     private List<Double> thrust_neg = new ArrayList<Double>();
 
-    //Beam Parameter, Averaged Observables, over n events
+    //Beam Parameter-Based Averaged Observables, over n events
+    //along with their errors. I know this is "too many" lists.
     private List<Double> eDep_pList = new ArrayList<Double>();
     private List<Double> eDep_nList = new ArrayList<Double>();
+    private List<Double> eDep_pError = new ArrayList<Double>();
+    private List<Double> eDep_nError = new ArrayList<Double>();
 
     private List<Double> meanDepth_pList = new ArrayList<Double>();
     private List<Double> meanDepth_nList = new ArrayList<Double>();
+    private List<Double> meanDepth_pError = new ArrayList<Double>();
+    private List<Double> meanDepth_nError = new ArrayList<Double>();
 
     private List<Double> x_avgs_posList = new ArrayList<Double>();
     private List<Double> y_avgs_posList = new ArrayList<Double>();
     private List<Double> x_avgs_negList = new ArrayList<Double>();
     private List<Double> y_avgs_negList = new ArrayList<Double>();
+    private List<Double> x_avgs_posError = new ArrayList<Double>();
+    private List<Double> y_avgs_posError = new ArrayList<Double>();
+    private List<Double> x_avgs_negError = new ArrayList<Double>();
+    private List<Double> y_avgs_negError = new ArrayList<Double>();
 
     private List<Double> LR_asym_posList = new ArrayList<Double>();
     private List<Double> TD_asym_posList = new ArrayList<Double>();
     private List<Double> LR_asym_negList = new ArrayList<Double>();
     private List<Double> TD_asym_negList = new ArrayList<Double>();
+    private List<Double> LR_asym_posError = new ArrayList<Double>();
+    private List<Double> TD_asym_posError = new ArrayList<Double>();
+    private List<Double> LR_asym_negError = new ArrayList<Double>();
+    private List<Double> TD_asym_negError = new ArrayList<Double>();
 
     private List<Double> thrust_posList = new ArrayList<Double>();
     private List<Double> thrust_negList = new ArrayList<Double>();
+    private List<Double> thrust_posError = new ArrayList<Double>();
+    private List<Double> thrust_negError = new ArrayList<Double>();
     /*
     private List<Double> thrustAxis_x_p = new ArrayList<Double>();
     private List<Double> thrustAxis_x_n = new ArrayList<Double>();
