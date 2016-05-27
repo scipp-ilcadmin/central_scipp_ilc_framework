@@ -170,7 +170,7 @@ public class StdhepMomenta extends Driver {
             double[] P = {x,y,z};
             double[] PT = {x,y};
             double En = event.getPHEP(p, 3);
-            double cosAngle = getCosAngle(x,y,z);
+            double cosAngle = Math.abs( getCosAngle(x,y,z) );
             
             boolean isNeutrino = (ID==12 || ID==14 || ID==16 || ID==18 );
             if( finState ){
