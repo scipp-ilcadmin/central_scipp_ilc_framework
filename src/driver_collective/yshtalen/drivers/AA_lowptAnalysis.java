@@ -84,6 +84,7 @@ public class AA_lowptAnalysis extends Driver {
             root.init("TH1D", "true_vector", "true_vector", "true_vector", 10000, 0, 100);
             root.init("TH1D", "true_mass", "true_mass", "true_mass", 10000, 0, 1000);
 
+            root.init("TH2D", "energy_PvE", "energy_PvE", "Energy P v E", 1000, 0, 260, 1000, 0, 260); 
             //file process loop
             int total = 0;
             //int limit = 10000;
@@ -142,7 +143,12 @@ public class AA_lowptAnalysis extends Driver {
         //until it is determined that the particle they derived
         //their values from was not the initial electron or positron
         //i.e. that particle's energy is not the highest
-
+        try{
+            root.fill("energy", electronEnergy, positronEnergy);
+        } catch(java.io.IOException e) {
+            System.out.println(e);
+            System.exit(1);
+        }
 
         //not-detectable  , detectable  : px, py, pz, E, scalar
         double[][] totals = { {0,0,0,0,0}, {0,0,0,0,0} };
