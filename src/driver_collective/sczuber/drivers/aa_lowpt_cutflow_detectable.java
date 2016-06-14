@@ -1,10 +1,10 @@
 /*
- * aa_lowptAnalysis.java
+ * aa_lowpt_cutflow_detectable.java
  *
  * Created on July 11, 2013, 10:45 AM
  * Edited on August 26, 2015, 02:21 AM
  * @author Christopher Milke
- *
+ * edited by Summer Zuber
  */
 package scipp_ilc.drivers;
 
@@ -29,7 +29,7 @@ import java.io.FileReader;
 import hep.io.stdhep.*;
 import hep.io.xdr.XDRInputStream;
 
-public class AA_lowptAnalysis extends Driver {
+public class aa_lowpt_cutflow_detectable extends Driver {
 
 
     //DEFINE XML FUNCTIONS
@@ -76,14 +76,8 @@ public class AA_lowptAnalysis extends Driver {
         String root_mode = "UPDATE";
 
         try {
-            root = new Jroot(jrootFile,root_mode);
-            root.init("TH1D", "detect_scalar", "detect_scalar", "detect_scalar", 10000, 0, 100);
-            root.init("TH1D", "detect_vector", "detect_vector", "detect_vector", 10000, 0, 100);
-            root.init("TH1D", "detect_mass", "detect_mass", "detect_mass", 10000, 0, 1000);
-            root.init("TH1D", "true_scalar", "true_scalar", "true_scalar", 10000, 0, 100);
-            root.init("TH1D", "true_vector", "true_vector", "true_vector", 10000, 0, 100);
-            root.init("TH1D", "true_mass", "true_mass", "true_mass", 10000, 0, 1000);
-
+            root = new Jroot(jrootFile,root_mode); 
+            //initialize root plots 
             //file process loop
             int total = 0;
             //int limit = 10000;
@@ -98,8 +92,16 @@ public class AA_lowptAnalysis extends Driver {
                             System.out.println("    TOTAL = " + total);
                             root.proc("f.Write()");
                         }
-                        //do stuff with even
+                        //do stuff with event
+
                         analyze(event);
+                        if(total == 1600000){
+                            System.out.println("cuts_0  "+cuts[0]);
+                            System.out.println("cuts_1  "+cuts[1]);
+                            System.out.println("cuts_2  "+cuts[2]);
+                            System.out.println("cuts_3  "+cuts[3]);
+                            System.out.println("cuts_4  "+cuts[4]);
+                        }
                     }
                     //if (total > limit) break;
                 }
@@ -185,18 +187,18 @@ public class AA_lowptAnalysis extends Driver {
         double total_true_mass_squared = square_true_pE - square_true_px - square_true_py - square_true_pz;
         if ( (-1e-9) < total_true_mass_squared && total_true_mass_squared < 0 ) total_true_mass_squared = 0.0;
         double total_true_mass = Math.sqrt(total_true_mass_squared);
-
-        try {
-            root.fill("detect_scalar", total_detect_scalar);
-            root.fill("detect_vector", total_detect_vector);
-            root.fill("detect_mass", total_detect_mass);
-            root.fill("true_scalar", total_true_scalar);
-            root.fill("true_vector", total_true_vector);
-            root.fill("true_mass", total_true_mass);
-
-        } catch(java.io.IOException e) {
-            System.out.println(e);
-            System.exit(1);
+        cuts[0]+=1;
+        if(total_detect_scalar > 0.5){
+            cuts[1]+=1;
+            if(total_detect_mass > 0.5){
+                 cuts[2]+=1;
+                 if(total_detect_scalar >1){
+                     cuts[3]+=1;
+                     if(total_detect_mass > 1){
+                         cuts[4]+=1;
+                     }
+                 }
+            }
         }
 
     }
@@ -226,6 +228,7 @@ public class AA_lowptAnalysis extends Driver {
     }
 
 
+    double[] cuts = {0, 0, 0, 0, 0};
     // Generator Statuses
     private final int DOCUMENTATION = 3;
     private final int FINAL_STATE = 1;
