@@ -37,7 +37,7 @@ final public class MipStub implements Cluster {
     public double angleBaseDir;     // Angle made between the direction and he XY plane
     //static double maxKappaValue = 1./50.;  // maximum allowed curvature estimate
     static final double k_cm = 10.;
-    public int debugLevel; //What?
+    public int debugLevel; //determines how much information to show. 
     private int nHits=0; //Number of hits in the mibstub
     private int minLayer=-1; //First layer we see hits 
     private MCParticle[] mcParticles = null; //List of our particles. Starts empty
@@ -142,9 +142,9 @@ final public class MipStub implements Cluster {
   }
   
   // -- Public setters :  ------------------------------------------------------
-    //I think this just sets our empty list of particles to the cluster's list of particles
+    //Sets the relevant MCParticle to some object
     public void setMCParticles(MCParticle[] mcParticles) {this.mcParticles = mcParticles;}
-    //No idea what this does. Yet
+    //Assigns the curvature to a helix
     public void setKappa(double ka){kappa=ka;}
   
   
