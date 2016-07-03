@@ -221,7 +221,7 @@ public class AA_lowptAnalysis extends Driver {
         double cos_theta = mom_z / mom_total;
         boolean is_forward = ( Math.abs(cos_theta) > 0.9 );
 
-        //return 0 (is not detectable) if particle is neutrino or is forward
+        //return 0 (is not detectable) if particle is neutrino (or is forward for detected)
         return ( is_neutrino ) ? 0 : 1;
     }
 
