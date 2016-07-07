@@ -1,5 +1,5 @@
 /*
- * aa_lowptAnalysis.java
+ * AA_lowptAnalysis.java
  *
  * Created on July 11, 2013, 10:45 AM
  * Edited on August 26, 2015, 02:21 AM
@@ -77,9 +77,12 @@ public class AA_lowptAnalysis extends Driver {
 
         try {
             root = new Jroot(jrootFile,root_mode);
-            root.init("TH1D", "detect_scalar", "detect_scalar", "detect_scalar", 10000, 0, 100);
-            root.init("TH1D", "detect_vector", "detect_vector", "detect_vector", 10000, 0, 100);
-            root.init("TH1D", "detect_mass", "detect_mass", "detect_mass", 10000, 0, 1000);
+            root.init("TH1D", "detectable_scalar", "detectable_scalar", "detectable_scalar", 10000, 0, 100);
+            root.init("TH1D", "detectable_vector", "detectable_vector", "detectable_vector", 10000, 0, 100);
+            root.init("TH1D", "detectable_mass", "detectable_mass", "detectable_mass", 10000, 0, 1000);
+            root.init("TH1D", "detected_scalar", "detected_scalar", "detected_scalar", 10000, 0, 1000);
+            root.init("TH1D", "detected_vector", "detected_vector", "detected_vector", 10000, 0, 1000);
+            root.init("TH1D", "detected_mass", "detected_mass", "detected_mass", 10000, 0, 1000);
             root.init("TH1D", "true_scalar", "true_scalar", "true_scalar", 10000, 0, 100);
             root.init("TH1D", "true_vector", "true_vector", "true_vector", 10000, 0, 100);
             root.init("TH1D", "true_mass", "true_mass", "true_mass", 10000, 0, 1000);
@@ -144,8 +147,8 @@ public class AA_lowptAnalysis extends Driver {
         //i.e. that particle's energy is not the highest
 
 
-        //not-detectable  , detectable  : px, py, pz, E, scalar
-        double[][] totals = { {0,0,0,0,0}, {0,0,0,0,0} };
+        //not-detectable  , detectable ,  not detectED ,  detectED : px, py, pz, E, scalar
+        double[][] totals = { {0,0,0,0,0}, {0,0,0,0,0}, {0,0,0,0,0}, {0,0,0,0,0} };
 
         //find initial electron and positron
         for (int particleI = 0; particleI < number_particles; particleI++) {
@@ -160,20 +163,34 @@ public class AA_lowptAnalysis extends Driver {
             double energy = event.getPHEP(particleI, 3);
 
             int is_detectable = check_if_detectable(pdgid,mom_x,mom_y,mom_z);
-            update_totals(totals,mom_x,mom_y,mom_z,energy,is_detectable);
+            int is_detected = check_if_detected(pdgid, mom_x,mom_y,mom_z);
+            update_totals(totals,mom_x,mom_y,mom_z,energy,is_detectable,is_detected);
         }
 
-        double square_detect_px = Math.pow( totals[1][0], 2 );
-        double square_detect_py = Math.pow( totals[1][1], 2 );
-        double square_detect_pz = Math.pow( totals[1][2], 2 );
-        double square_detect_pE = Math.pow( totals[1][3], 2 );
+        double square_detectable_px = Math.pow( totals[1][0], 2 );
+        double square_detectable_py = Math.pow( totals[1][1], 2 );
+        double square_detectable_pz = Math.pow( totals[1][2], 2 );
+        double square_detectable_pE = Math.pow( totals[1][3], 2 );
 
-        double total_detect_scalar = totals[1][4];
-        double total_detect_vector = Math.sqrt( square_detect_px + square_detect_py );
-        double total_detect_mass_squared = square_detect_pE - square_detect_px - square_detect_py - square_detect_pz;
-        if ( (-1e-9) < total_detect_mass_squared && total_detect_mass_squared < 0 ) total_detect_mass_squared = 0.0;
-        double total_detect_mass = Math.sqrt(total_detect_mass_squared);
+        double total_detectable_scalar = totals[1][4];
+        double total_detectable_vector = Math.sqrt( square_detectable_px + square_detectable_py );
+        double total_detectable_mass_squared = square_detectable_pE - square_detectable_px - square_detectable_py - square_detectable_pz;
+        if ( (-1e-9) < total_detectable_mass_squared && total_detectable_mass_squared < 0 ) total_detectable_mass_squared = 0.0;
+        double total_detectable_mass = Math.sqrt(total_detectable_mass_squared);
 
+    
+        double square_detected_px = Math.pow( totals[3][0], 2);
+        double square_detected_py = Math.pow( totals[3][1], 2);
+        double square_detected_pz = Math.pow( totals[3][2], 2);
+        double square_detected_pE = Math.pow( totals[3][3], 2);
+        
+        
+        double total_detected_scalar = totals[3][4];
+        double total_detected_vector = Math.sqrt( square_detectable_px + square_detectable_py );
+        double total_detected_mass_squared = square_detectable_pE - square_detectable_px - square_detectable_py - square_detectable_pz;
+        if ( (-1e-9) < total_detected_mass_squared && total_detected_mass_squared < 0 ) total_detected_mass_squared = 0.0;
+        double total_detected_mass = Math.sqrt(total_detected_mass_squared);  
+        
 
         double square_true_px = Math.pow( totals[0][0] + totals[1][0], 2 );
         double square_true_py = Math.pow( totals[0][1] + totals[1][1], 2 );
@@ -187,9 +204,12 @@ public class AA_lowptAnalysis extends Driver {
         double total_true_mass = Math.sqrt(total_true_mass_squared);
 
         try {
-            root.fill("detect_scalar", total_detect_scalar);
-            root.fill("detect_vector", total_detect_vector);
-            root.fill("detect_mass", total_detect_mass);
+            root.fill("detectable_scalar", total_detectable_scalar);
+            root.fill("detected_scalar", total_detected_scalar);
+            root.fill("detectable_vector", total_detectable_vector);
+            root.fill("detected_vector", total_detected_vector);
+            root.fill("detectable_mass", total_detectable_mass);
+            root.fill("detected_mass", total_detected_mass);
             root.fill("true_scalar", total_true_scalar);
             root.fill("true_vector", total_true_vector);
             root.fill("true_mass", total_true_mass);
@@ -202,12 +222,18 @@ public class AA_lowptAnalysis extends Driver {
     }
 
 
-    private void update_totals( double[][] totals, double mom_x, double mom_y, double mom_z, double energy, int is_detectable ) {
+    private void update_totals( double[][] totals, double mom_x, double mom_y, double mom_z, double energy, int is_detectable, int is_detected ) {
         totals[is_detectable][0] += mom_x;
+        totals[is_detected][0] += mom_x;
         totals[is_detectable][1] += mom_y;
+        totals[is_detected][1] += mom_y;
         totals[is_detectable][2] += mom_z;
+        totals[is_detected][2] += mom_z;
         totals[is_detectable][3] += energy;
+        totals[is_detected][3] += energy;
         totals[is_detectable][4] += Math.sqrt( mom_x*mom_x + mom_y*mom_y );
+        totals[is_detected][4] += Math.sqrt( mom_x*mom_x + mom_y*mom_y );
+
     }
 
 
@@ -221,11 +247,22 @@ public class AA_lowptAnalysis extends Driver {
         double cos_theta = mom_z / mom_total;
         boolean is_forward = ( Math.abs(cos_theta) > 0.9 );
 
-        //return 0 (is not detectable) if particle is neutrino (or is forward for detected)
-        return ( is_neutrino ) ? 0 : 1;
+        return ( is_neutrino ) ? 0 : 1 ; // 0 of not detected 1 if detected 
+        //if (is_neutrino)  return 0; //not detectable
+        //if (!is_neutrino) return 1; //detectable
     }
-
-
+    private int check_if_detected( int id, double mom_x, double mom_y, double mom_z ){
+        boolean is_neutrino = ( id == 12 || id == -12 ||
+                                id == 14 || id == -14 ||
+                                id == 16 || id == -16 ||
+                                id == 18 || id == -18 );
+        double mom_total = Math.pow(mom_x*mom_x + mom_y*mom_y + mom_z*mom_z,0.5);
+        double cos_theta = mom_z / mom_total; 
+        boolean is_forward = ( Math.abs(cos_theta) > 0.9 );
+        return ( is_neutrino || is_forward) ? 2 : 3;
+        //if ( is_neutrino || is_forward ) return 2; //not detected
+        //if ( !is_neutrino && !is_forward ) return 3; //detected
+    }
     // Generator Statuses
     private final int DOCUMENTATION = 3;
     private final int FINAL_STATE = 1;
