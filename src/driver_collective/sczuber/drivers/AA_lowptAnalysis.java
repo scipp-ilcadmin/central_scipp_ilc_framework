@@ -80,8 +80,8 @@ public class AA_lowptAnalysis extends Driver {
             root.init("TH1D", "detectable_scalar", "detectable_scalar", "detectable_scalar", 10000, 0, 100);
             root.init("TH1D", "detectable_vector", "detectable_vector", "detectable_vector", 10000, 0, 100);
             root.init("TH1D", "detectable_mass", "detectable_mass", "detectable_mass", 10000, 0, 1000);
-            root.init("TH1D", "detected_scalar", "detected_scalar", "detected_scalar", 10000, 0, 1000);
-            root.init("TH1D", "detected_vector", "detected_vector", "detected_vector", 10000, 0, 1000);
+            root.init("TH1D", "detected_scalar", "detected_scalar", "detected_scalar", 10000, 0, 100);
+            root.init("TH1D", "detected_vector", "detected_vector", "detected_vector", 10000, 0, 100);
             root.init("TH1D", "detected_mass", "detected_mass", "detected_mass", 10000, 0, 1000);
             root.init("TH1D", "true_scalar", "true_scalar", "true_scalar", 10000, 0, 100);
             root.init("TH1D", "true_vector", "true_vector", "true_vector", 10000, 0, 100);
