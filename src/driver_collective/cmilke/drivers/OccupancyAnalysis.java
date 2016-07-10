@@ -87,30 +87,24 @@ public class OccupancyAnalysis extends Driver {
     //This is where the vast bulk of the program is run and controlled
     public void process( EventHeader event ) {
         super.process( event );
-        List<SimCalorimeterHit> hits = event.get(SimCalorimeterHit.class, "EcalEndcapHits");
+        List<SimCalorimeterHit> hits = event.get(SimCalorimeterHit.class, "BeamCalHits");
         
         boolean reject_negative = true;
         
         int hit_count = 0;
         
-        try {
-            for (SimCalorimeterHit hit : hits) {
-                double[] vec = hit.getPosition();
-                int layer = hit.getLayerNumber();
-                
-                if ( reject_negative && (vec[2]<0) ); //pass over event
-                else {
-                    root.fill("hist1",vec[2]);
-                    root.fill("scatter1",vec[0],vec[1]);            
-                }
-            }
-        
-        } catch(java.io.IOException e) {
-            System.out.println(e);
-            System.exit(1);
-        }
+        for (SimCalorimeterHit hit : hits) {
+            double raw_e = hit.getRawEnergy();
+            double cor_e = hit.getCorrectedEnergy();
 
-        System.out.println("finished event "+ ++eventNumber);        
+            double frac = cor_e / raw_e;
+
+            System.out.println("frac = " + frac);
+
+        }
+        
+
+        //System.out.println("finished event "+ ++eventNumber);        
 
     }//End Process
 
