@@ -162,6 +162,12 @@ public class AA_lowptAnalysis extends Driver {
             double mom_z  = event.getPHEP(particleI, 2);
             double energy = event.getPHEP(particleI, 3);
 
+            //Checking for coding error by multiplying all components by -1:
+            //mom_x = mom_x*-1;
+            //mom_y = mom_y*-1;
+            //mom_z = mom_z*-1;
+            //-------------------------------------------------------------
+
             int is_detectable = check_if_detectable(pdgid,mom_x,mom_y,mom_z);
             int is_detected = check_if_detected(pdgid, mom_x,mom_y,mom_z);
             update_totals(totals,mom_x,mom_y,mom_z,energy,is_detectable,is_detected);
