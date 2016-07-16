@@ -89,7 +89,7 @@ public class AA_lowptAnalysis extends Driver {
 
             //file process loop
             int total = 0;
-            //int limit = 10000;
+            int limit = 1600000;
             for(String filename: stdhepfilelist) {
                 System.out.println("FILENAME = " + filename);
                 StdhepReader reader = new StdhepReader(filename);
@@ -104,9 +104,9 @@ public class AA_lowptAnalysis extends Driver {
                         //do stuff with even
                         analyze(event);
                     }
-                    //if (total > limit) break;
+                    if (total > limit) break;
                 }
-                //if (total > limit) break;
+                if (total > limit) break;
             } 
             System.out.println("\n\nFINISHED " + total);
             root.end();
@@ -209,6 +209,7 @@ public class AA_lowptAnalysis extends Driver {
         if ( (-1e-9) < total_true_mass_squared && total_true_mass_squared < 0 ) total_true_mass_squared = 0.0;
         double total_true_mass = Math.sqrt(total_true_mass_squared);
 
+
         try {
             root.fill("detectable_scalar", total_detectable_scalar);
             root.fill("detected_scalar", total_detected_scalar);
@@ -220,10 +221,11 @@ public class AA_lowptAnalysis extends Driver {
             root.fill("true_vector", total_true_vector);
             root.fill("true_mass", total_true_mass);
 
-        } catch(java.io.IOException e) {
+        } 
+        catch(java.io.IOException e) {
             System.out.println(e);
             System.exit(1);
-        }
+        }   
 
     }
 

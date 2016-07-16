@@ -79,7 +79,7 @@ public class cutflow_2phot extends Driver {
         try {  
             //file process loop
             int total = 0;
-            //int limit = 10000;
+            //int limit = 1600000;
             for(String filename: stdhepfilelist) {
                 System.out.println("FILENAME = " + filename);
                 StdhepReader reader = new StdhepReader(filename);
@@ -89,7 +89,7 @@ public class cutflow_2phot extends Driver {
                         StdhepEvent event = (StdhepEvent) record;
                         if (++total % 1000 == 0) {
                             System.out.println("    TOTAL = " + total);
-                            root.proc("f.Write()");
+                            //root.proc("f.Write()");
                         }
                         //do stuff with even
                         analyze(event);
